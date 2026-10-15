@@ -89,6 +89,7 @@ pub fn encode(decoded: &DecodedImage, options: WebpOptions) -> Result<Encoded, E
         orientation_applied,
         transparency_flattened: false,
         precision_reduced,
+        colour_profile_dropped: false,
     };
     finish(bytes, decoded, &rgba, options, adjustments, alpha)
 }

@@ -18,6 +18,7 @@ use image::metadata::Orientation;
 use crate::decode::DecodedImage;
 use crate::format::ImageFormat;
 
+pub mod avif;
 pub mod jpeg;
 pub mod png;
 pub mod webp;
@@ -34,6 +35,9 @@ pub struct Adjustments {
     pub transparency_flattened: bool,
     /// The source had more than 8 bits per channel and the output has 8.
     pub precision_reduced: bool,
+    /// The source's ICC colour profile could not be written to this format
+    /// and the caller explicitly allowed dropping it; colours may shift.
+    pub colour_profile_dropped: bool,
 }
 
 /// Encoded bytes plus what had to change to produce them.
@@ -73,6 +77,9 @@ pub enum EncodeError {
     /// The source carries signed content credentials (C2PA) that re-encoding
     /// would invalidate, so it was left unchanged.
     ProtectedContent(ImageFormat),
+    /// The source has an ICC colour profile this format's encoder cannot
+    /// store, and dropping it was not allowed (docs/07: ask, don't discard).
+    ColourProfileNotSupported(ImageFormat),
     /// The encoder failed or ran out of memory.
     Failed(ImageFormat),
     /// The encoder produced bytes that did not decode back to the expected
@@ -87,6 +94,7 @@ impl EncodeError {
             EncodeError::InvalidOptions(_) => "invalid-options",
             EncodeError::QualityNotReached(_) => "quality-not-reached",
             EncodeError::ProtectedContent(_) => "protected-content",
+            EncodeError::ColourProfileNotSupported(_) => "colour-profile-not-supported",
             EncodeError::Failed(_) => "encode-failed",
             EncodeError::VerificationFailed(_) => "output-verification-failed",
         }
@@ -106,6 +114,10 @@ impl fmt::Display for EncodeError {
             EncodeError::ProtectedContent(format) => write!(
                 f,
                 "This {format} carries signed content credentials, so it was left unchanged."
+            ),
+            EncodeError::ColourProfileNotSupported(format) => write!(
+                f,
+                "This image has a colour profile that {format} output cannot keep yet, so colours could shift."
             ),
             EncodeError::Failed(format) => write!(f, "Creating the {format} file failed."),
             EncodeError::VerificationFailed(format) => write!(

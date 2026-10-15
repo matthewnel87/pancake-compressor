@@ -107,3 +107,6 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | WebP ICC | Tested | Survives simple lossy (VP8), simple lossless (VP8L) and extended (VP8X+ALPH) layouts, odd-length profile, RIFF size consistent |
 | Observation | Recorded | On a perfectly smooth synthetic gradient, lossless WebP was smaller than lossy. The M2 "avoid larger output" comparison must compare real outputs, not assume |
 | Checks on macOS arm64 | Passed | 61 engine tests + 3 doctests; clippy clean; `cargo deny check` clean |
+| AVIF encode (ravif) | Implemented, tested | Decodes back at correct size; quality 30 smaller than 95; alpha kept; orientation applied |
+| AVIF and colour profiles | Tested | Source with ICC refused by default (`colour-profile-not-supported`); allowed loss reported as `colour_profile_dropped` |
+| Checks on macOS arm64 | Passed | 66 engine tests + 3 doctests; clippy clean; `cargo deny check` clean |

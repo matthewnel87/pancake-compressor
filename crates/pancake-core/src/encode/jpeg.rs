@@ -103,6 +103,7 @@ pub fn encode(decoded: &DecodedImage, options: JpegOptions) -> Result<Encoded, E
             orientation_applied,
             transparency_flattened,
             precision_reduced,
+            colour_profile_dropped: false,
         },
     })
 }

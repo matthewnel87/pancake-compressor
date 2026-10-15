@@ -81,3 +81,7 @@ The allow-list is enforced by `deny.toml` (`cargo deny check`) in the CI `audit`
 ### M1 WebP encoding dependencies — 2026-10-15
 
 `webp` 0.3.1 (MIT OR Apache-2.0, default `img` feature off) and `libwebp-sys` 0.14.4 (MIT; builds Google's libwebp C sources, BSD-3-Clause, with the platform C compiler; no NASM). `cargo deny check` passes.
+
+### M1 AVIF encoding dependencies — 2026-10-15
+
+`ravif` 0.13.0 moved from dev-dependency to dependency (BSD-3-Clause) with default features: `asm` (rav1e assembly; NASM on x86, already required by ADR-027) and `threading` (rayon, thread count set per call). `rav1e` 0.8.1 is BSD-2-Clause. `cargo deny check` passes.
