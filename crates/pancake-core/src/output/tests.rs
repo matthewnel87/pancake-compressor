@@ -181,3 +181,18 @@ fn write_failure_reports_kind_and_leaves_nothing() {
     assert!(matches!(result, Err(OutputError::Io(_))), "{result:?}");
     assert!(leftovers(dir.path()).is_empty());
 }
+
+#[test]
+fn names_differing_only_by_case_never_overwrite() {
+    // On case-insensitive volumes (Windows, default macOS) "A" and "a" are
+    // the same file, so the second write must be numbered. On case-sensitive
+    // volumes both names are free. Either way the first file is untouched.
+    let dir = temp_dir();
+    let first = write_ok(dir.path(), "A", b"upper", ConflictPolicy::Rename);
+    let second = write_ok(dir.path(), "a", b"lower", ConflictPolicy::Rename);
+    let (WriteOutcome::Written(first), WriteOutcome::Written(second)) = (first, second) else {
+        unreachable!("both writes should succeed");
+    };
+    assert_eq!(std::fs::read(&first).unwrap_or_default(), b"upper");
+    assert_eq!(std::fs::read(&second).unwrap_or_default(), b"lower");
+}

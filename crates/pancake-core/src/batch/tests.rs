@@ -397,3 +397,36 @@ fn memory_estimate_is_monotonic_and_saturating() {
     assert!(estimate_memory(4000, 3000, 1) > estimate_memory(400, 300, 1));
     assert_eq!(estimate_memory(u32::MAX, u32::MAX, u64::MAX), u64::MAX);
 }
+
+#[test]
+fn a_tiny_file_claiming_huge_dimensions_is_refused_before_decoding() {
+    let input = temp_dir();
+    let output = temp_dir();
+    // Valid PNG signature + IHDR claiming 100,000 x 100,000 RGBA pixels
+    // (40 GB once decoded) in about 60 bytes.
+    let mut bomb = vec![0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13];
+    bomb.extend(b"IHDR");
+    bomb.extend(100_000u32.to_be_bytes());
+    bomb.extend(100_000u32.to_be_bytes());
+    bomb.extend([8, 6, 0, 0, 0, 0, 0, 0, 0]);
+    bomb.extend([0, 0, 0, 0]);
+    bomb.extend(b"IDAT");
+    write(&input.path().join("bomb.png"), &bomb);
+    let files = scan(&[input.path().to_path_buf()], Some(output.path())).files;
+    let (summary, events) = run_collect(
+        &files,
+        &settings_for(output.path()),
+        &CancelToken::new(),
+        |_| {},
+    );
+    assert_eq!(summary.skipped, 1);
+    assert!(events.iter().any(|e| e.update
+        == Update::Finished(Finished::Skipped {
+            code: "too-many-pixels"
+        })));
+    assert!(
+        !events
+            .iter()
+            .any(|e| e.update == Update::Phase(Phase::Decoding))
+    );
+}
