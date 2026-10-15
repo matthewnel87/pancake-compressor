@@ -13,6 +13,9 @@
 | `crates/pancake-core/src/decode/avif.rs` | AVIF decoding via `avif-decode`, with a pre-check that the AV1 stream cannot declare a bigger frame than the container (ADR-027). |
 | `crates/pancake-core/src/encode.rs` | Shared encoder types (`Encoded`, `Adjustments`, errors) and helpers for orientation and metadata carriage. Every encoder re-decodes and checks its own output before returning it. |
 | `crates/pancake-core/src/auto.rs` | Presets, keep-format and rule-based Smart Auto: builds a bounded candidate list, keeps the smallest valid output, never returns a file larger than the original (ADR-015, ADR-035). |
+| `crates/pancake-core/src/scan.rs` | Lists files under selected folders without following links, skipping output folders, duplicates and OS clutter (ADR-037). |
+| `crates/pancake-core/src/output.rs` | Writes results with an atomic no-overwrite rename from a flushed temporary file; numbered or skip on conflicts (ADR-036). |
+| `crates/pancake-core/src/batch.rs` | Runs a batch with fixed workers and a memory budget, cancellation, per-file panic containment and ordered progress events (ADR-038). |
 | `crates/pancake-core/src/metadata.rs` | Bounds-checked EXIF reader that resets orientation to upright (ADR-034). |
 | `crates/pancake-core/src/encode/png.rs` | Lossless PNG (`oxipng`, pixel-identical) and lossy palette PNG (`imagequant`) (ADR-029). |
 | `crates/pancake-core/src/encode/jpeg.rs` | JPEG via MozJPEG: applies EXIF orientation, flattens transparency onto a matte and reports both in `Adjustments`; carries ICC (ADR-031). |
@@ -26,7 +29,7 @@
 | `src/App.tsx` | Launch screen. |
 | `src/styles/tokens.css` | Colour and spacing tokens, with the measured contrast record. |
 
-No file selection or batch code exists yet. Header inspection, decoding for all four formats and Encoding for all four formats is done. Batch processing, file output and the UI follow in M2 and M3.
+No file selection or batch code exists yet. Header inspection, decoding for all four formats and Encoding for all four formats, scanning, safe output and the batch engine are done. Wiring them to the desktop app (file pickers, events) and the UI follow.
 
 ```text
 React / TypeScript interface

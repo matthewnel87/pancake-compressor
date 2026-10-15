@@ -20,11 +20,14 @@
 //! M1 and is tracked in `docs/IMPLEMENTATION-STATUS.md`.
 
 pub mod auto;
+pub mod batch;
 pub mod decode;
 pub mod encode;
 pub mod format;
 pub mod limits;
 pub mod metadata;
+pub mod output;
+pub mod scan;
 
 /// Version of the engine crate, taken from Cargo at compile time.
 ///

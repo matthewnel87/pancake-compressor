@@ -20,6 +20,7 @@ mozjpeg = "0.10.13"
 oxipng = { version = "10.2.1", default-features = false }
 png = "0.18"
 ravif = "0.13.0"
+tempfile = "3.27"
 webp = { version = "0.3.1", default-features = false }
 
 [lints.rust]

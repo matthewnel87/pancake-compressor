@@ -154,3 +154,13 @@ Peak memory for the whole run: **1.01 GB** (`/usr/bin/time -l`). For M2 this mea
 | AVIF consent | Tested | Profile loss needs consent; AVIF in Auto only when enabled |
 | Preset numbers | **Provisional** | Not tuned on real photographs yet |
 | Checks on macOS arm64 | Passed | 78 unit + matrix + 3 metadata + 2 API tests + 4 doctests; clippy clean |
+
+## M2 engine core — 2026-10-15 (branch `m2-batch-engine`, stacked on `m1-metadata-auto`; local)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Safe output writing | Implemented, tested | Never overwrites (numbered or skip); 50 threads writing one name → 50 distinct complete files, no temporaries left; unsafe relative paths and device names refused; write failure leaves nothing |
+| Scanner | Implemented, tested (symlink tests Unix-only) | Nested relative paths; output and `_pancake` folders skipped; overlapping/repeated roots listed once; OS clutter ignored; depth limit; symlinks to outside folders, loops and file links not followed; link roots refused; FIFOs skipped. **Windows junction test not written** (needs elevated rights to create) |
+| Batch engine | Implemented, tested | Mixed batch (2 images, text, GIF, damaged PNG, APNG) → exact codes and counts; 500 nested files reconcile with mirrored output paths; originals byte-identical; existing outputs kept; cancel before start → 0 files written; cancel mid-batch → finished outputs complete, no temporaries, counts reconcile; memory-budget skip before decoding; peak concurrency ≤ worker count; unusable output folder fails every file cleanly |
+| Not done in M2 yet | | Tauri commands, native file/folder pickers, event bridge to the UI, batch snapshot for reconnect, disk-full simulation, Windows case-collision test, huge-dimension PNG test in the batch corpus |
+| Checks on macOS arm64 | Passed | 105 unit + matrix + 3 metadata + 2 API tests + 4 doctests; clippy clean; `cargo deny check` clean |
