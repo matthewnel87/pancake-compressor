@@ -67,3 +67,7 @@ The allow-list is enforced by `deny.toml` (`cargo deny check`) in the CI `audit`
 - **BSD-2-Clause** added to `deny.toml` (permissive, GPL-compatible).
 - **RUSTSEC-2024-0436** (`paste` unmaintained) is ignored with a reason: `paste` is a compile-time proc-macro used by `rav1d` and `rav1e`, so none of its code runs in the app. Remove when those crates move to a maintained fork.
 - **Build tool:** on x86 targets `avif-decode` enables `rav1d`'s assembly, which needs **NASM ≥ 2.14** at build time. Apple Silicon builds use pure Rust and need nothing extra.
+
+### M1 PNG encoding dependencies — 2026-10-15
+
+`oxipng` 10.2.1 (MIT, default features off) with `libdeflater`/`libdeflate-sys` (MIT; compiles the bundled libdeflate C source with the platform C compiler, no extra tools); `imagequant` 4.4.1 (**GPL-3.0-or-later**, threads feature off); `png` 0.18 (MIT/Apache-2.0) for writing indexed PNGs. `cargo deny check` passes. Using `imagequant` is what makes GPL-3.0-or-later distribution mandatory (ADR-005).

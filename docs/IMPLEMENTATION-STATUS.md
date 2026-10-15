@@ -83,3 +83,15 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | AVIF grid (tiled) images, 12-bit, monochrome | **Not tested** | Need fixtures from another encoder (e.g. libavif) |
 | Windows x64 / macOS Intel build (needs NASM) | **Not yet proven** | This PR's CI is the first run with NASM installed |
 | Checks on macOS arm64 | Passed | `cargo test` (36 engine tests + 3 doctests) in debug and `--release`; clippy clean; `cargo deny check` clean |
+
+## M1 step 4: PNG encoding — 2026-10-15 (branch `m1-png-encode`, stacked on `m1-avif-decode`; local only, not pushed yet)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Lossless PNG (oxipng) | Implemented, tested | Pixel-identical incl. hidden RGB of fully transparent pixels; 16-bit precision kept; `tEXt` metadata kept; output verified by re-decoding |
+| Lossy PNG (imagequant) | Implemented, tested | Flat-colour image becomes indexed PNG with exact colours and alpha; 16-bit source reduced to 8-bit palette; ICC profile carried |
+| Quality floor | Tested | Noise at min quality 95 returns `quality-not-reached` instead of a banded image |
+| EXIF/XMP in lossy PNG output | **Not carried yet** | PNK-013 metadata matrix |
+| C2PA-protected PNG | Mapped to `protected-content`, **not tested** with a real signed file |
+| Size/time benchmarks | **Not measured** | M1 exit criterion; needs representative fixtures |
+| Checks on macOS arm64 | Passed | 44 engine tests + 3 doctests; clippy clean; `cargo deny check` clean |

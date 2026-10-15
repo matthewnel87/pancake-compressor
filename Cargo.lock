@@ -1697,6 +1697,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "imagequant"
+version = "4.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caf5d73b959dfbe5d6b5cd3ca8de5265c7bc58297f20560a60a1d2ba6a19991f"
+dependencies = [
+ "arrayvec",
+ "once_cell",
+ "rgb",
+]
+
+[[package]]
 name = "imgref"
 version = "1.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1983,6 +1994,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "328c4789d42200f1eeec05bd86c9c13c7f091d2ba9a6ea35acdf51f31bc0f043"
 dependencies = [
  "pkg-config",
+]
+
+[[package]]
+name = "libdeflate-sys"
+version = "1.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7870e5fbd2766179a937c725fb11f4ca0ef025d982beb61bd3ce755425bd19c"
+dependencies = [
+ "cc",
+]
+
+[[package]]
+name = "libdeflater"
+version = "1.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cbb8285d2e2bd4b8d4155840ae81929354b4ba0d7b3c272c84761ffa2141e1f"
+dependencies = [
+ "libdeflate-sys",
 ]
 
 [[package]]
@@ -2504,6 +2533,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
 
 [[package]]
+name = "oxipng"
+version = "10.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52a88e3e5c2ad82e691b219e2b45a90eb5a51d26a434c7e191563e957a48e07a"
+dependencies = [
+ "indexmap 2.14.2",
+ "libdeflater",
+ "log",
+ "rgb",
+ "rustc-hash",
+]
+
+[[package]]
 name = "pancake-compressor"
 version = "0.1.0"
 dependencies = [
@@ -2522,7 +2564,10 @@ dependencies = [
  "avif-parse",
  "bytemuck",
  "image",
+ "imagequant",
  "imgref",
+ "oxipng",
+ "png 0.18.1",
  "ravif",
 ]
 

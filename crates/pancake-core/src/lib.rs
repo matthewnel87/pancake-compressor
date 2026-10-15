@@ -20,6 +20,7 @@
 //! M1 and is tracked in `docs/IMPLEMENTATION-STATUS.md`.
 
 pub mod decode;
+pub mod encode;
 pub mod format;
 pub mod limits;
 
