@@ -55,3 +55,7 @@ Measured with `cargo deny list -l crate` (cargo-deny 0.20.2) on the M0 lockfile:
 All are compatible with distributing the app as GPL-3.0-or-later. MPL-2.0 is file-level copyleft: those crates' own files stay under MPL-2.0, and MPL section 3.3 permits combining them into a GPL work. Two crates offer LGPL-2.1-or-later only as one alternative alongside MIT/Apache-2.0; we use them under MIT/Apache-2.0.
 
 The allow-list is enforced by `deny.toml` (`cargo deny check`) in the CI `audit` job. **Not yet done:** npm licence tree for the bundled front end, third-party notices file in the installers, and re-auditing when codec crates arrive in M1 (`imagequant` is GPL-3.0-or-later, which is why ADR-005 chose GPL).
+
+### M1 decoding dependencies — 2026-10-15
+
+`image` 0.25.10 with `default-features = false` and only `png`, `jpeg`, `webp` enabled (MIT OR Apache-2.0). This pulls in the pure-Rust `png`, `zune-jpeg` and `image-webp` decoders and adds 22 crates to the engine, with no C code or build tools. `cargo deny check` passes. The `image` crate's `avif` (ravif) and `avif-native` (dav1d, a C library) features are deliberately **off**; AVIF is handled in its own step.

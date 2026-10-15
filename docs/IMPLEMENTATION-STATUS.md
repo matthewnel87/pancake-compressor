@@ -57,3 +57,15 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | Robustness against hostile headers | Tested, **not fuzzed** | Every truncation of every fixture and 20,000 seeded random inputs return without panic. Real fuzzing (cargo-fuzz) is M4 work |
 | Checked against real files from other encoders | **Not done** | Fixtures are hand-built headers; real encoder output is checked once codecs land |
 | Windows / macOS Intel runs of these tests | **Not run** | Will run in CI when this branch has a PR |
+
+## M1 step 2: PNG, JPEG and WebP decoding — 2026-10-15 (branch `m1-decode`, stacked on `m1-format-sniffing`)
+
+| Area | Status | Evidence |
+|---|---|---|
+| PNG decode (8/16-bit, alpha) | Implemented, tested | Pixel-exact round trip incl. transparent and half-transparent pixels; 16-bit depth kept |
+| WebP decode (lossless, alpha) | Implemented, tested | Pixel-exact round trip. **Lossy WebP decode not yet tested** (needs a lossy encoder, which arrives with the libwebp step) |
+| JPEG decode (baseline) | Implemented, tested | Mean absolute error < 4 on a smooth gradient. Progressive and CMYK JPEG, and EXIF orientation from real camera files, **not yet tested** |
+| Decoder memory limits from header | Implemented, tested | `caller_limits_are_enforced_before_decoding`; decoder `max_alloc` = pixels x 8 bytes + 64 MiB |
+| Damaged data | Tested | Truncations every 7 bytes and half-zeroed files for all three formats return errors, never panic; edited IHDR is refused |
+| AVIF decode | **Not implemented** | Returns `format-not-yet-supported` |
+| Results on Windows / macOS Intel | **Not run yet** | macOS arm64 only: `cargo test --workspace --locked` 32 engine tests + 3 doctests pass; clippy and `cargo deny check` clean |

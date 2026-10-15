@@ -19,6 +19,7 @@
 //! arithmetic that later decoding work depends on. Codec support arrives in
 //! M1 and is tracked in `docs/IMPLEMENTATION-STATUS.md`.
 
+pub mod decode;
 pub mod format;
 pub mod limits;
 
