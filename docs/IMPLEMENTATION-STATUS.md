@@ -36,11 +36,12 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | Contrast of colour tokens | Measured | All text pairs ≥ 4.5:1 after ADR-018; values recorded in `src/styles/tokens.css` |
 | macOS arm64 DMG | Built locally, **not install-tested on a clean machine** | `npm run tauri build -- --target aarch64-apple-darwin --bundles dmg` with `APPLE_SIGNING_IDENTITY=-`. DMG 1,902,351 bytes, SHA256 `b55ce1c54c22dc1f80b14f51916d01e2ce8f6574fe1c6ddfed376dceabc6f292` (local build, not a release). App 3.8 MB, arm64 only, `LSMinimumSystemVersion` 13.0 |
 | DMG behaviour | Checked | Mounts without a licence prompt (after ADR-023), contains app + Applications link |
+| Bundle identifier | Changed after this build | The DMG above was built before the bundle identifier was finalised (ADR-016), so CI builds supersede it |
 | Signature | Ad-hoc only | `codesign --verify --deep --strict` passes; `Signature=adhoc`, hardened runtime flag set. `spctl --assess` **rejects** it: Gatekeeper will block downloaded copies. Not notarised |
 | Launch smoke test (build machine, not clean OS) | Passed | Process started, main window 960×640 on screen within ~0.75 s of `open`, still running after 6 s at ~100 MB RSS. `lsof -i` showed 0 sockets for the app process. WebKit helper processes were **not** inspected, so this is not yet a full no-network proof |
 | Screenshot | Not captured | Terminal lacks macOS Screen Recording permission |
 | Windows x64 NSIS, macOS Intel DMG | **Not built** | Needs GitHub Actions run (blocked on push permission for workflow files) |
-| GitHub CI on 3 runners | **Not run** | Private repo `matthewnel87/pancake-compressor` created; push pending `workflow` token scope |
+| GitHub CI on 3 runners | **Not run** | Moving to `matthewnel87/pancake-compressor`; push pending GitHub CLI login for that account |
 | Dependency audits (`npm audit`, `cargo audit`), licence check | `npm install` reported 0 vulnerabilities; `cargo audit` and licence tree **not run** | CI `audit` job, and cargo-deny still to be added |
 
 **Gate M0 is not yet met**: it requires green Windows and macOS (Intel + ARM) CI bundles.
