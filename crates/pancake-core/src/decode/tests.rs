@@ -99,27 +99,111 @@ fn jpeg_round_trip_keeps_size_and_is_close() {
     );
 }
 
+/// Encodes `image` as AVIF with ravif (fast speed setting, tests only).
+fn encode_avif(image: &DynamicImage, depth: ravif::BitDepth) -> Vec<u8> {
+    let rgba = image.to_rgba8();
+    let pixels: Vec<ravif::RGBA8> = rgba
+        .pixels()
+        .map(|p| ravif::RGBA8::new(p[0], p[1], p[2], p[3]))
+        .collect();
+    let (width, height) = (rgba.width() as usize, rgba.height() as usize);
+    ravif::Encoder::new()
+        .with_quality(90.0)
+        .with_alpha_quality(90.0)
+        .with_speed(10)
+        .with_bit_depth(depth)
+        .with_num_threads(Some(1))
+        .encode_rgba(ravif::Img::new(&pixels[..], width, height))
+        .unwrap_or_else(|error| unreachable!("test fixture failed to encode: {error}"))
+        .avif_file
+}
+
+fn mean_abs_error_rgba8(a: &DynamicImage, b: &DynamicImage) -> f64 {
+    let (a, b) = (a.to_rgba8(), b.to_rgba8());
+    let total: u64 = a
+        .as_raw()
+        .iter()
+        .zip(b.as_raw())
+        .map(|(x, y)| u64::from(x.abs_diff(*y)))
+        .sum();
+    total as f64 / a.as_raw().len() as f64
+}
+
 #[test]
-fn avif_is_reported_as_not_yet_supported() {
-    // A header-valid AVIF is refused cleanly rather than half-decoded.
-    let mut avif = Vec::new();
-    let boxed = |kind: &[u8; 4], payload: &[u8]| {
-        let mut out = ((payload.len() + 8) as u32).to_be_bytes().to_vec();
-        out.extend_from_slice(kind);
-        out.extend_from_slice(payload);
-        out
-    };
-    let ispe = boxed(b"ispe", &[0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 8]);
-    let ipco = boxed(b"ipco", &ispe);
-    let iprp = boxed(b"iprp", &ipco);
-    let mut meta = vec![0, 0, 0, 0];
-    meta.extend(iprp);
-    avif.extend(boxed(b"ftyp", b"avif\0\0\0\0mif1avif"));
-    avif.extend(boxed(b"meta", &meta));
+fn avif_eight_bit_with_alpha_decodes_close_to_source() {
+    let original = rgba_pattern(48, 32);
+    let bytes = encode_avif(&original, ravif::BitDepth::Eight);
+    // The header inspector must agree with a real encoder's output.
     assert_eq!(
-        decode(&avif, &ImageLimits::default()).map(|d| d.info),
-        Err(DecodeError::FormatNotYetSupported(ImageFormat::Avif))
+        crate::format::inspect(&bytes).map(|i| (i.format, i.width, i.height)),
+        Ok((ImageFormat::Avif, 48, 32))
     );
+    let decoded = decode_ok(&bytes);
+    assert_eq!((decoded.info.width, decoded.info.height), (48, 32));
+    assert!(decoded.pixels.color().has_alpha());
+    assert_eq!(decoded.info.alpha, crate::format::AlphaHint::Present);
+    let error = mean_abs_error_rgba8(&original, &decoded.pixels);
+    assert!(error < 6.0, "mean absolute error {error}");
+    // The fully transparent quadrant must stay fully transparent.
+    let rgba = decoded.pixels.to_rgba8();
+    assert!(
+        rgba.get_pixel(0, 0)[3] < 8,
+        "alpha {}",
+        rgba.get_pixel(0, 0)[3]
+    );
+}
+
+#[test]
+fn ten_bit_avif_is_full_range_sixteen_bit_not_dark() {
+    // An opaque mid-grey: if 10-bit samples were not scaled to 16 bits the
+    // decoded image would be about 64x too dark.
+    let grey =
+        DynamicImage::ImageRgba8(ImageBuffer::from_pixel(16, 16, Rgba([128, 128, 128, 255])));
+    let decoded = decode_ok(&encode_avif(&grey, ravif::BitDepth::Ten));
+    assert!(matches!(
+        decoded.pixels.color(),
+        image::ColorType::Rgb16 | image::ColorType::Rgba16
+    ));
+    let centre = decoded.pixels.to_rgb16().get_pixel(8, 8)[0];
+    assert!(
+        (30_000..36_000).contains(&centre),
+        "16-bit value {centre} is not mid-grey (about 32,896)"
+    );
+}
+
+#[test]
+fn avif_frame_larger_than_container_is_refused() {
+    // Real 32x32 AVIF whose container size (ispe) is edited down to 8x8.
+    // The AV1 stream still declares 32x32, so decoding must be refused
+    // before the AV1 decoder allocates for the larger frame.
+    let mut bytes = encode_avif(&rgba_pattern(32, 32), ravif::BitDepth::Eight);
+    let mut edited = 0;
+    let mut at = 0;
+    while let Some(found) = bytes[at..].windows(4).position(|w| w == b"ispe") {
+        let size_at = at + found + 4 + 4; // after "ispe" and version/flags
+        bytes[size_at..size_at + 4].copy_from_slice(&8u32.to_be_bytes());
+        bytes[size_at + 4..size_at + 8].copy_from_slice(&8u32.to_be_bytes());
+        edited += 1;
+        at = size_at;
+    }
+    assert!(edited >= 1, "fixture has no ispe box");
+    let result = decode(&bytes, &ImageLimits::default()).map(|d| d.info);
+    assert!(
+        matches!(result, Err(DecodeError::DimensionMismatch { .. })),
+        "got {result:?}"
+    );
+}
+
+#[test]
+fn damaged_avif_fails_without_panicking() {
+    let bytes = encode_avif(&rgba_pattern(24, 24), ravif::BitDepth::Eight);
+    for end in (0..bytes.len()).step_by(5) {
+        let _ = decode(&bytes[..end], &ImageLimits::default());
+    }
+    let mut zeroed = bytes.clone();
+    let half = zeroed.len() / 2;
+    zeroed[half..].fill(0);
+    let _ = decode(&zeroed, &ImageLimits::default());
 }
 
 #[test]

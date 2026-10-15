@@ -38,7 +38,7 @@ We welcome people who simply want a faster workflow, not only developers. Read [
 
 ## Developers: build and improve it
 
-Requirements: Node 24 LTS (see `.nvmrc`), Rust 1.99.1 (installed automatically by `rustup` from `rust-toolchain.toml`) and the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS.
+Requirements: Node 24 LTS (see `.nvmrc`), Rust 1.99.1 (installed automatically by `rustup` from `rust-toolchain.toml`) the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS, and on **Windows and Intel Macs** [NASM](https://www.nasm.us/) 2.14 or later on your `PATH` (used to build the AVIF decoder; not needed on Apple Silicon).
 
 ```bash
 npm ci                      # install front-end dependencies from the lockfile

@@ -11,5 +11,8 @@ personal data, or files whose origin is unknown (`AGENTS.md` rule 10).
 
 | Decodable PNG (8- and 16-bit, RGBA with transparent and half-transparent areas), lossless WebP and baseline JPEG | Generated in memory by `crates/pancake-core/src/decode/tests.rs` (`rgba_pattern`, `rgb_gradient`) using the `image` crate's encoders | Synthetic gradients; nothing stored on disk | GPL-3.0-or-later (part of this repository) |
 
-Encoder-specific fixtures (oxipng, imagequant, MozJPEG, libwebp lossy,
-AVIF) arrive with those codec steps.
+| AVIF, 8-bit with alpha and 10-bit opaque grey; plus an edited copy whose container size is shrunk below the AV1 frame size | Generated in memory by `encode_avif` in `crates/pancake-core/src/decode/tests.rs` using `ravif` (dev-dependency) | Synthetic patterns; nothing stored on disk | GPL-3.0-or-later (part of this repository) |
+| Header-only AVIF with `irot`/`imir` properties | `format/tests.rs` | Byte-built | GPL-3.0-or-later |
+
+Encoder-specific fixtures (oxipng, imagequant, MozJPEG, libwebp lossy) arrive
+with those codec steps.

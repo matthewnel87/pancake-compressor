@@ -69,3 +69,17 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | Damaged data | Tested | Truncations every 7 bytes and half-zeroed files for all three formats return errors, never panic; edited IHDR is refused |
 | AVIF decode | **Not implemented** | Returns `format-not-yet-supported` |
 | Results on Windows / macOS Intel | **Not run yet** | macOS arm64 only: `cargo test --workspace --locked` 32 engine tests + 3 doctests pass; clippy and `cargo deny check` clean |
+
+## M1 step 3: AVIF decoding — 2026-10-15 (branch `m1-avif-decode`, stacked on `m1-decode`)
+
+| Area | Status | Evidence |
+|---|---|---|
+| AVIF decode (8-bit with alpha, 10-bit) | Implemented, tested on macOS arm64 | Real files from `ravif`: 8-bit RGBA mean error < 6 and transparent area stays transparent; 10-bit mid-grey decodes as full-range 16-bit (~32,896), not dark |
+| AV1 frame larger than container | Refused before AV1 decoding, tested | `avif_frame_larger_than_container_is_refused` (ADR-027) |
+| Rotation/mirroring (`irot`/`imir`) | Refused with a clear message, tested | `rotated_or_mirrored_avif_is_refused_until_supported` |
+| Damaged AVIF | Tested in debug **and release** builds | Truncations every 5 bytes and half-zeroed file return errors. Found and fixed: `avif-parse` panicked in debug builds on a truncated file (ADR-028) |
+| Header inspector vs real encoder output | Checked for AVIF | `format::inspect` reads the correct 48×32 size from a `ravif` file |
+| Embedded ICC profile in AVIF | **Not returned** (always `None`) | Wide-gamut AVIFs could shift colour when converted; to be handled in PNK-013 metadata work |
+| AVIF grid (tiled) images, 12-bit, monochrome | **Not tested** | Need fixtures from another encoder (e.g. libavif) |
+| Windows x64 / macOS Intel build (needs NASM) | **Not yet proven** | This PR's CI is the first run with NASM installed |
+| Checks on macOS arm64 | Passed | `cargo test` (36 engine tests + 3 doctests) in debug and `--release`; clippy clean; `cargo deny check` clean |

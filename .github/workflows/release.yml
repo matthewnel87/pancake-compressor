@@ -52,6 +52,9 @@ jobs:
           targets: ${{ matrix.target }}
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+      - name: Install NASM (x86 only; AVIF decoder assembly, ADR-027)
+        if: ${{ startsWith(matrix.target, 'x86_64') }}
+        uses: ilammy/setup-nasm@v1
       - name: Check release tag and manifest versions
         run: python scripts/check_tag_version.py ${{ github.ref_name }}
       - run: npm ci

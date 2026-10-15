@@ -23,3 +23,10 @@ opt-level = 3
 # core code returns errors instead (see AGENTS.md rule 4).
 panic = "abort"
 strip = true
+
+# avif-parse 2.1.0 uses `debug_assert!` on a condition that hostile files can
+# trigger (`check_parser_state`), then returns an error in release builds.
+# Disable its debug assertions in dev/test builds so a damaged AVIF fails the
+# same way it does for users instead of panicking (ADR-028).
+[profile.dev.package.avif-parse]
+debug-assertions = false

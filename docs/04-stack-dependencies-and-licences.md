@@ -59,3 +59,11 @@ The allow-list is enforced by `deny.toml` (`cargo deny check`) in the CI `audit`
 ### M1 decoding dependencies — 2026-10-15
 
 `image` 0.25.10 with `default-features = false` and only `png`, `jpeg`, `webp` enabled (MIT OR Apache-2.0). This pulls in the pure-Rust `png`, `zune-jpeg` and `image-webp` decoders and adds 22 crates to the engine, with no C code or build tools. `cargo deny check` passes. The `image` crate's `avif` (ravif) and `avif-native` (dav1d, a C library) features are deliberately **off**; AVIF is handled in its own step.
+
+### M1 AVIF decoding dependencies — 2026-10-15
+
+`avif-decode` 3.0.0 (BSD-3-Clause, default features off), which uses `avif-parse` 2.1.0 (MPL-2.0), `rav1d` 1.1.0 (BSD-2-Clause, Rust port of dav1d) and `yuv` 0.8 for colour conversion; plus `imgref` and `bytemuck` for buffer conversion. `ravif` 0.13.0 (BSD-3-Clause, default features off) is a **dev-dependency only**, used to generate AVIF test fixtures.
+
+- **BSD-2-Clause** added to `deny.toml` (permissive, GPL-compatible).
+- **RUSTSEC-2024-0436** (`paste` unmaintained) is ignored with a reason: `paste` is a compile-time proc-macro used by `rav1d` and `rav1e`, so none of its code runs in the app. Remove when those crates move to a maintained fork.
+- **Build tool:** on x86 targets `avif-decode` enables `rav1d`'s assembly, which needs **NASM ≥ 2.14** at build time. Apple Silicon builds use pure Rust and need nothing extra.

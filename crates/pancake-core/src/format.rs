@@ -108,6 +108,9 @@ pub enum UnsupportedKind {
     /// JPEG using lossless, hierarchical or arithmetic coding, which common
     /// decoders do not support reliably.
     JpegCodingProcess,
+    /// AVIF with rotation (`irot`) or mirroring (`imir`) properties, which
+    /// the AVIF decoder does not apply (ADR-027).
+    AvifTransform,
 }
 
 /// Why a file was not accepted. Each variant maps to a stable
@@ -169,6 +172,9 @@ impl fmt::Display for InspectError {
                     UnsupportedKind::JpegXl => "JPEG XL images are not supported yet.",
                     UnsupportedKind::JpegCodingProcess => {
                         "This JPEG uses an uncommon encoding that is not supported."
+                    }
+                    UnsupportedKind::AvifTransform => {
+                        "This AVIF is stored rotated or mirrored, which is not supported yet."
                     }
                 };
                 f.write_str(what)
@@ -664,6 +670,11 @@ mod isobmff {
                 break;
             }
             let property = read_box(bytes, at, ipco.end)?;
+            if &property.kind == b"irot" || &property.kind == b"imir" {
+                // Applying these is not supported by the decoder; refusing
+                // is safer than producing a sideways or mirrored copy.
+                return Err(InspectError::Unsupported(UnsupportedKind::AvifTransform));
+            }
             if &property.kind == b"ispe" {
                 // FullBox header (4), then width and height as u32.
                 let width = be_u32(bytes, property.body + 4).ok_or(InspectError::Truncated(F))?;

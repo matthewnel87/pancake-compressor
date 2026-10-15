@@ -426,3 +426,24 @@ fn preflight_refuses_decompression_bombs_before_decoding() {
         inspect(&jpeg(0xC0, 4000, 3000))
     );
 }
+
+#[test]
+fn rotated_or_mirrored_avif_is_refused_until_supported() {
+    for property in [b"irot", b"imir"] {
+        let mut ftyp = b"avif".to_vec();
+        ftyp.extend_from_slice(&[0, 0, 0, 0]);
+        ftyp.extend_from_slice(b"mif1avif");
+        let mut properties = ispe(64, 32);
+        properties.extend(iso_box(property, &[1]));
+        let ipco = iso_box(b"ipco", &properties);
+        let iprp = iso_box(b"iprp", &ipco);
+        let mut meta = vec![0, 0, 0, 0];
+        meta.extend(iprp);
+        let mut bytes = iso_box(b"ftyp", &ftyp);
+        bytes.extend(iso_box(b"meta", &meta));
+        assert_eq!(
+            inspect(&bytes),
+            Err(InspectError::Unsupported(UnsupportedKind::AvifTransform))
+        );
+    }
+}

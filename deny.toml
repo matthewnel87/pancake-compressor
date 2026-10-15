@@ -16,6 +16,13 @@ targets = [
 [advisories]
 # Known vulnerabilities and unmaintained crates from the RustSec database.
 yanked = "deny"
+# Each ignore needs a reason and must be revisited when the dependency changes.
+ignore = [
+  # `paste` is archived (unmaintained, not vulnerable). It is a compile-time
+  # proc-macro used by the AV1 crates rav1d and rav1e; none of its code runs
+  # in the app. Remove once those crates migrate (e.g. to `pastey`).
+  { id = "RUSTSEC-2024-0436", reason = "build-time proc-macro only, no runtime code (docs/04)" },
+]
 
 [licenses]
 confidence-threshold = 0.9
@@ -24,6 +31,7 @@ allow = [
   "MIT",
   "MIT-0",
   "Apache-2.0",
+  "BSD-2-Clause",      # rav1d (AV1 decoder), rav1e
   "BSD-3-Clause",
   "0BSD",
   "Zlib",

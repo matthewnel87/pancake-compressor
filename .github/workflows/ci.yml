@@ -45,6 +45,9 @@ jobs:
           targets: ${{ matrix.target }}
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+      - name: Install NASM (x86 only; AVIF decoder assembly, ADR-027)
+        if: ${{ startsWith(matrix.target, 'x86_64') }}
+        uses: ilammy/setup-nasm@v1
       - name: Install JS dependencies from lockfile
         run: npm ci
       - name: JS linter

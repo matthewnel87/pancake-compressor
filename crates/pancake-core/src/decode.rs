@@ -6,11 +6,10 @@
 //! allocation cap derived from them, so a file whose body disagrees with its
 //! header cannot make it allocate more.
 //!
-//! **Supported here:** PNG, JPEG and still WebP, through the pure-Rust
-//! decoders in the `image` crate (no native libraries, so behaviour is the
-//! same on Windows and macOS). **Not yet:** AVIF, which needs an AV1 decoder
-//! and is a separate M1 step; it is reported as
-//! [`DecodeError::FormatNotYetSupported`] rather than guessed at.
+//! **Decoders:** PNG, JPEG and still WebP use the pure-Rust decoders in the
+//! `image` crate. AVIF uses `avif-decode`, with an extra check that the AV1
+//! stream cannot declare a larger frame than its container (see
+//! [`avif`](self::avif) module notes).
 //!
 //! **What it does not do:** rotate pixels for EXIF orientation, convert
 //! colour profiles or drop metadata. It reports the orientation and ICC
@@ -54,8 +53,9 @@ pub struct DecodedImage {
 pub enum DecodeError {
     /// Refused before decoding (unknown, unsupported, animated, too large...).
     Preflight(InspectError),
-    /// A supported format whose decoder is not built yet (AVIF in M1 step 2).
-    FormatNotYetSupported(ImageFormat),
+    /// The file uses a feature of its format that the decoder does not
+    /// support (for example an unusual AVIF layout).
+    UnsupportedFeature(ImageFormat),
     /// The decoder hit an allocation or dimension limit.
     LimitExceeded(ImageFormat),
     /// The pixel data is damaged or inconsistent.
@@ -73,7 +73,7 @@ impl DecodeError {
     pub fn code(&self) -> &'static str {
         match self {
             DecodeError::Preflight(inner) => inner.code(),
-            DecodeError::FormatNotYetSupported(_) => "format-not-yet-supported",
+            DecodeError::UnsupportedFeature(_) => "unsupported-image-feature",
             DecodeError::LimitExceeded(_) => "decode-limit-exceeded",
             DecodeError::Corrupt(_) => "corrupt-image-data",
             DecodeError::DimensionMismatch { .. } => "dimension-mismatch",
@@ -85,12 +85,10 @@ impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DecodeError::Preflight(inner) => inner.fmt(f),
-            DecodeError::FormatNotYetSupported(format) => {
-                write!(
-                    f,
-                    "Opening {format} images is not available in this version yet."
-                )
-            }
+            DecodeError::UnsupportedFeature(format) => write!(
+                f,
+                "This {format} uses a feature that Pancake Compressor cannot open yet."
+            ),
             DecodeError::LimitExceeded(format) => write!(
                 f,
                 "This {format} needs more memory to open than Pancake Compressor allows for one image."
@@ -114,7 +112,7 @@ impl From<InspectError> for DecodeError {
     }
 }
 
-/// Decodes a still PNG, JPEG or WebP held in memory.
+/// Decodes a still PNG, JPEG, WebP or AVIF held in memory.
 ///
 /// Steps: preflight (format, animation, pixel caps) → decoder with limits
 /// set to the header's own dimensions → confirm decoded size equals the
@@ -125,7 +123,7 @@ pub fn decode(bytes: &[u8], limits: &ImageLimits) -> Result<DecodedImage, Decode
         ImageFormat::Png => image::ImageFormat::Png,
         ImageFormat::Jpeg => image::ImageFormat::Jpeg,
         ImageFormat::WebP => image::ImageFormat::WebP,
-        ImageFormat::Avif => return Err(DecodeError::FormatNotYetSupported(ImageFormat::Avif)),
+        ImageFormat::Avif => return avif::decode(bytes, info),
     };
 
     // The decoder may not exceed what the header promised. Preflight already
@@ -171,6 +169,8 @@ fn classify(format: ImageFormat, error: &image::ImageError) -> DecodeError {
         _ => DecodeError::Corrupt(format),
     }
 }
+
+mod avif;
 
 #[cfg(test)]
 mod tests;
