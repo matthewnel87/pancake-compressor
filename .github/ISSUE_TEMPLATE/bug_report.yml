@@ -1,0 +1,33 @@
+name: Bug report
+description: Report a reproducible Pancake Compressor issue
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: 'Please use synthetic/sample images, never private user content.'
+  - type: input
+    id: version
+    attributes:
+      label: App version / build tag
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Platform
+      options: [Windows x64, macOS Apple Silicon, macOS Intel, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include expected and actual behaviour, source format, output format, and whether the file is animated.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitised logs (optional)
+      description: Strip personal paths, image content and secrets.

@@ -1,0 +1,109 @@
+name: Release — draft installers with provenance
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    name: Build ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: windows-x64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundle: nsis
+            signing_identity: ""
+          - label: mac-arm64
+            runner: macos-15
+            target: aarch64-apple-darwin
+            bundle: dmg
+            signing_identity: "-"
+          - label: mac-intel
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+            bundle: dmg
+            signing_identity: "-"
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Rust stable and explicit target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Check release tag and manifest versions
+        run: python scripts/check_tag_version.py ${{ github.ref_name }}
+      - run: npm ci
+      - name: Frontend build
+        run: npm run build
+      - name: Rust checks
+        run: cargo test --workspace --locked
+      - name: Build Tauri installer
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ matrix.signing_identity }}
+        run: npm run tauri build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundle }}
+        # IMPORTANT: Windows installer config must use WebView2 offlineInstaller
+        # to meet the offline INSTALL requirement. See docs/18.
+      - name: Stage installer with stable platform filename
+        run: python scripts/stage_release.py --platform ${{ matrix.label }} --version ${{ github.ref_name }}
+      - name: Verify non-empty staged file
+        run: python scripts/verify_staged.py
+      - name: GitHub release artifact attestation (real installer bytes)
+        uses: actions/attest@v4
+        with:
+          subject-path: 'dist/*'
+      - name: Upload exact attested file
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.label }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+  release-draft:
+    needs: build
+    if: ${{ success() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download all installers (must have all 3)
+        uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          merge-multiple: true
+          path: dist
+      - name: Verify package set and produce checksum list
+        run: python scripts/make_checksums.py --directory dist --expected 3
+      - name: Publish **draft prerelease only**
+        uses: softprops/action-gh-release@v3
+        with:
+          draft: true
+          prerelease: true
+          generate_release_notes: true
+          files: dist/*
+          fail_on_unmatched_files: true
+      # MANUAL GATE: DO NOT AUTO-PUBLISH. Real OS smoke tests and signatures
+      # must be recorded before a human publishes this draft.

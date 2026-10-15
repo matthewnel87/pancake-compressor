@@ -1,0 +1,30 @@
+name: User feedback and experience
+description: Tell us about the real app experience; no code required
+body:
+  - type: markdown
+    attributes:
+      value: "Thank you! Please don't attach sensitive images or logs containing local file paths. General conversations may fit GitHub Discussions better once enabled."
+  - type: dropdown
+    id: os
+    attributes:
+      label: Platform
+      options: [Windows x64, macOS Apple Silicon, macOS Intel, Haven't installed it yet]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version (if installed)
+      placeholder: e.g. v0.1.0-preview
+  - type: textarea
+    id: positives
+    attributes:
+      label: What was good or easy?
+  - type: textarea
+    id: confusion
+    attributes:
+      label: What was confusing or difficult?
+  - type: textarea
+    id: priority
+    attributes:
+      label: One thing you would change

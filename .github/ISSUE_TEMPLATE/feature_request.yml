@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest a workflow improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: user-problem
+    attributes:
+      label: What is the problem or task?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: What behaviour would help?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Compression, Conversion, Batch workflow, Presets, Accessibility, Privacy, Windows install, macOS install, Other]

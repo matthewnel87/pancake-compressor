@@ -1,0 +1,20 @@
+name: Documentation issue
+description: Report missing, unclear, or incorrect public instructions
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Which page or section?
+      placeholder: README, Windows installation, security overview...
+    validations:
+      required: true
+  - type: textarea
+    id: confusion
+    attributes:
+      label: What was confusing or wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested wording or clarification (optional)

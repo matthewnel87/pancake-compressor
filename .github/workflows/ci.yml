@@ -1,0 +1,83 @@
+name: CI — code and desktop builds
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-and-build:
+    name: ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: windows-x64
+            runner: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundle: nsis
+          - label: mac-arm64
+            runner: macos-15
+            target: aarch64-apple-darwin
+            bundle: dmg
+          - label: mac-intel
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+            bundle: dmg
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Set up Rust target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Install JS dependencies from lockfile
+        run: npm ci
+      - name: JS linter
+        run: npm run lint
+      - name: Frontend automated tests
+        run: npm run test -- --run
+      - name: TypeScript/production web build
+        run: npm run build
+      - name: Rust formatting
+        run: cargo fmt --all -- --check
+      - name: Rust Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Rust tests
+        run: cargo test --workspace --locked
+      - name: Build platform installer (not a manual install test)
+        run: npm run tauri build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundle }}
+      - name: Stage exactly one installer for evidence
+        run: python scripts/stage_release.py --platform ${{ matrix.label }} --version ci
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-${{ matrix.label }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - name: Install RustSec audit tool
+        run: cargo install --locked cargo-audit
+      - run: cargo audit
