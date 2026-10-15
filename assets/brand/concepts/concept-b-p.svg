@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Pancake Compressor concept B: letter P made of pancakes</title>
+  <rect x="24" y="24" width="464" height="464" rx="108" fill="#2C241F"/>
+  <!-- Stem of the P -->
+  <rect x="132" y="112" width="78" height="300" rx="39" fill="#F0B25A"/>
+  <!-- Bowl of the P: two stacked pancake curves -->
+  <path d="M170 112 h120 a92 92 0 0 1 0 184 h-120 z" fill="#E9A54B"/>
+  <path d="M170 150 h112 a54 54 0 0 1 0 108 h-112 z" fill="#2C241F"/>
+  <path d="M182 196 h100 a10 10 0 0 1 0 20 h-100 z" fill="#F8D27D"/>
+  <!-- Butter dot -->
+  <circle cx="352" cy="132" r="22" fill="#F8D27D"/>
+</svg>

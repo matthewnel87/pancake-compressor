@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Pancake Compressor concept C: image file pressed into a pancake</title>
+  <rect x="24" y="24" width="464" height="464" rx="108" fill="#FFF4E2"/>
+  <!-- Image file, folded corner -->
+  <path d="M146 92 h158 l64 64 v150 h-222 z" fill="#FFFFFF" stroke="#2C241F" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M304 92 v64 h64" fill="none" stroke="#2C241F" stroke-width="14" stroke-linejoin="round"/>
+  <!-- Mountain + sun: "an image" -->
+  <path d="M176 270 l46 -58 34 40 26 -30 52 48 z" fill="#A65B22"/>
+  <circle cx="214" cy="176" r="18" fill="#E9A54B"/>
+  <!-- The file's bottom pressed into a pancake -->
+  <rect x="92" y="300" width="328" height="84" rx="42" fill="#8A4A1A"/>
+  <rect x="92" y="300" width="328" height="62" rx="31" fill="#E9A54B"/>
+  <!-- Press arrows -->
+  <path d="M110 150 v60 m-18 -18 l18 18 18 -18 M402 210 v60 m-18 -18 l18 18 18 -18" fill="none" stroke="#A65B22" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
