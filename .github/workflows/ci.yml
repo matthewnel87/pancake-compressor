@@ -63,14 +63,21 @@ jobs:
       - name: Rust tests
         run: cargo test --workspace --locked
       - name: Build platform installer (not a manual install test)
+        # Installers are release evidence, not a PR check (docs/16): building
+        # them takes ~35 min on Windows, so PRs skip it (ADR-042).
+        if: ${{ github.event_name != 'pull_request' }}
         env:
           # macOS: ad-hoc signature for unsigned previews (docs/13). This does
           # not satisfy Gatekeeper. Ignored on Windows.
           APPLE_SIGNING_IDENTITY: '-'
         run: npm run tauri build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundle }}
       - name: Stage exactly one installer for evidence
+        # Installers are release evidence, not a PR check (docs/16): building
+        # them takes ~35 min on Windows, so PRs skip it (ADR-042).
+        if: ${{ github.event_name != 'pull_request' }}
         run: python scripts/stage_release.py --platform ${{ matrix.label }} --version ci
       - uses: actions/upload-artifact@v4
+        if: ${{ github.event_name != 'pull_request' }}
         with:
           name: ci-${{ matrix.label }}
           path: release-artifacts/*
