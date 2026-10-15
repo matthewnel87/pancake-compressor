@@ -84,11 +84,10 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: 1.99.1
       - run: npm ci
       - run: npm audit --audit-level=high
-      - name: Install RustSec audit tool
-        run: cargo install --locked cargo-audit
-      - run: cargo audit
+      - name: Rust advisories, licences, bans and sources (deny.toml)
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --all-features

@@ -39,3 +39,19 @@ For each codec and each of Windows x64/macOS Intel/macOS ARM:
 ## No bogus performance promises
 
 Installer size, startup time, RAM, compression ratio, AVIF speed and memory usage are **not known** until measured on both OS families. Do not reuse the older brainstorm's claimed 10–15 MB installer, sub-20 MB RAM or 1 GB file guarantees.
+
+## M0 licence audit — 2026-10-15
+
+Measured with `cargo deny list -l crate` (cargo-deny 0.20.2) on the M0 lockfile: 381 crates in the Rust tree (Tauri 2.12.4 shell, no codecs yet).
+
+| Licence expression | Crates |
+|---|---|
+| MIT and/or Apache-2.0 (incl. dual and triple licences) | 341 |
+| Unicode-3.0 | 18 (ICU data crates) |
+| MPL-2.0 | 5 (`cssparser`, `cssparser-macros`, `dtoa-short`, `selectors`, `option-ext`) |
+| Unlicense/MIT, BSD-3-Clause, Zlib, CC0-1.0/MIT-0, 0BSD | 15 |
+| GPL-3.0-or-later | 2 (this project) |
+
+All are compatible with distributing the app as GPL-3.0-or-later. MPL-2.0 is file-level copyleft: those crates' own files stay under MPL-2.0, and MPL section 3.3 permits combining them into a GPL work. Two crates offer LGPL-2.1-or-later only as one alternative alongside MIT/Apache-2.0; we use them under MIT/Apache-2.0.
+
+The allow-list is enforced by `deny.toml` (`cargo deny check`) in the CI `audit` job. **Not yet done:** npm licence tree for the bundled front end, third-party notices file in the installers, and re-auditing when codec crates arrive in M1 (`imagequant` is GPL-3.0-or-later, which is why ADR-005 chose GPL).
