@@ -170,6 +170,44 @@ pub fn decode(bytes: &[u8], limits: &ImageLimits) -> Result<DecodedImage, Decode
     })
 }
 
+/// Pixels as a viewer would show them: EXIF orientation applied.
+///
+/// Used for previews. Encoders apply orientation themselves (see
+/// `crate::encode`), so this is only for display.
+pub fn display_pixels(decoded: &DecodedImage) -> DynamicImage {
+    let mut pixels = decoded.pixels.clone();
+    pixels.apply_orientation(decoded.orientation);
+    pixels
+}
+
+/// Makes a small PNG preview of an image file held in memory: decoded with
+/// the usual limits, orientation applied, scaled to fit `max_side` pixels
+/// (never upscaled). Returns the PNG bytes and the full upright size.
+///
+/// The thumbnail is built in Rust so the UI never receives large pixel
+/// arrays over IPC (docs/23).
+pub fn preview_png(
+    bytes: &[u8],
+    limits: &ImageLimits,
+    max_side: u32,
+) -> Result<(Vec<u8>, u32, u32), DecodeError> {
+    let decoded = decode(bytes, limits)?;
+    let upright = display_pixels(&decoded);
+    drop(decoded);
+    let (width, height) = (upright.width(), upright.height());
+    let thumb = if width.max(height) > max_side {
+        upright.thumbnail(max_side, max_side)
+    } else {
+        upright
+    };
+    let mut out = Cursor::new(Vec::new());
+    thumb
+        .to_rgba8()
+        .write_to(&mut out, image::ImageFormat::Png)
+        .map_err(|_| DecodeError::Corrupt(ImageFormat::Png))?;
+    Ok((out.into_inner(), width, height))
+}
+
 /// Maps the `image` crate's error to our stable categories. Its detailed
 /// message is intentionally dropped: it is not written for end users.
 fn classify(format: ImageFormat, error: &image::ImageError) -> DecodeError {

@@ -33,6 +33,7 @@ pub fn run() {
             batch::cancel_batch,
             batch::get_batch_snapshot,
             batch::open_output_folder,
+            batch::request_preview,
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::DragDrop(drop) = event {

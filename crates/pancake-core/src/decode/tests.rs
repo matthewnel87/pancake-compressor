@@ -277,3 +277,27 @@ fn caller_limits_are_enforced_before_decoding() {
         Err("too-many-pixels")
     );
 }
+
+#[test]
+fn preview_is_small_upright_and_reports_full_size() {
+    let mut bytes = encode(&rgb_gradient(1200, 600), image::ImageFormat::Png);
+    // Without orientation: 1200 x 600, scaled to fit 300.
+    let (png, width, height) = preview_png(&bytes, &ImageLimits::default(), 300)
+        .unwrap_or_else(|error| unreachable!("{error:?}"));
+    assert_eq!((width, height), (1200, 600));
+    let thumb = decode_ok(&png);
+    assert_eq!((thumb.info.width, thumb.info.height), (300, 150));
+    // Small images are not upscaled.
+    bytes = encode(&rgb_gradient(40, 20), image::ImageFormat::Png);
+    let (png, _, _) = preview_png(&bytes, &ImageLimits::default(), 300)
+        .unwrap_or_else(|error| unreachable!("{error:?}"));
+    assert_eq!(decode_ok(&png).info.width, 40);
+}
+
+#[test]
+fn display_pixels_apply_orientation() {
+    let mut decoded = decode_ok(&encode(&rgb_gradient(40, 20), image::ImageFormat::Png));
+    decoded.orientation = Orientation::Rotate90;
+    let shown = display_pixels(&decoded);
+    assert_eq!((shown.width(), shown.height()), (20, 40));
+}

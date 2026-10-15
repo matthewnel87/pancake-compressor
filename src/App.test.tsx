@@ -14,6 +14,7 @@ const mocks = {
   startBatch: vi.fn<(options: unknown) => Promise<string>>(),
   cancelBatch: vi.fn<(id: string) => Promise<void>>(),
   openOutputFolder: vi.fn<(id: string) => Promise<void>>(),
+  requestPreview: vi.fn<(id: string, index: number, side: string) => Promise<unknown>>(),
 };
 vi.mock("./lib/ipc", () => ({
   getAppInfo: () => mocks.getAppInfo(),
@@ -22,6 +23,7 @@ vi.mock("./lib/ipc", () => ({
   startBatch: (options: unknown) => mocks.startBatch(options),
   cancelBatch: (id: string) => mocks.cancelBatch(id),
   openOutputFolder: (id: string) => mocks.openOutputFolder(id),
+  requestPreview: (id: string, index: number, side: string) => mocks.requestPreview(id, index, side),
   getBatchSnapshot: vi.fn(),
   subscribe: (name: string, handler: (payload: unknown) => void) => {
     handlers.set(name, handler);
@@ -159,4 +161,31 @@ describe("main window", () => {
     await emit("inputs-dropped", { ...selection, fileCount: 0, totalBytes: 0 });
     expect(await screen.findByRole("alert")).toHaveTextContent("No files were found");
   });
+
+  it("compares before and after, with a fallback when a preview fails", async () => {
+    const user = userEvent.setup();
+    mocks.selectInputs.mockResolvedValue(selection);
+    mocks.startBatch.mockResolvedValue("batch-1");
+    mocks.requestPreview.mockImplementation((_id, _index, side) =>
+      side === "original"
+        ? Promise.resolve({ dataUrl: "data:image/png;base64,AA==", width: 800, height: 600, bytes: 2_000_000 })
+        : Promise.reject("corrupt-image-data"),
+    );
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Choose images" }));
+    await user.click(await screen.findByRole("button", { name: "Compress images" }));
+    await emit("batch-event", event({ sequence: 1, state: "completed", processed: 1, originalBytes: 2_000_000, outputBytes: 500_000 }));
+    await emit("batch-finished", finished);
+
+    await user.click(screen.getByRole("button", { name: "Compare before and after for a.png" }));
+    expect(mocks.requestPreview).toHaveBeenCalledWith("batch-1", 0, "original");
+    expect(mocks.requestPreview).toHaveBeenCalledWith("batch-1", 0, "output");
+    expect(await screen.findByRole("img", { name: "Original image" })).toBeInTheDocument();
+    expect(await screen.findByText("No preview available for this image.")).toBeInTheDocument();
+    expect(screen.getByText(/800 × 600/)).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("heading", { name: /Compare: a\.png/ })).not.toBeInTheDocument();
+  });
 });
+

@@ -110,3 +110,19 @@ fn events_carry_relative_names_and_notices_never_full_paths() {
     assert!(!json.contains("/Users/"), "full path leaked: {json}");
     assert!(json.contains("\"schemaVersion\":1"));
 }
+
+#[test]
+fn base64_matches_rfc_4648_vectors() {
+    for (input, expected) in [
+        ("", ""),
+        ("f", "Zg=="),
+        ("fo", "Zm8="),
+        ("foo", "Zm9v"),
+        ("foob", "Zm9vYg=="),
+        ("fooba", "Zm9vYmE="),
+        ("foobar", "Zm9vYmFy"),
+    ] {
+        assert_eq!(base64(input.as_bytes()), expected, "{input:?}");
+    }
+    assert_eq!(base64(&[0xFB, 0xFF]), "+/8=");
+}

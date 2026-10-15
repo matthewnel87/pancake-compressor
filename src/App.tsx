@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Controls } from "./components/Controls";
 import { DropZone } from "./components/DropZone";
 import { PancakeMark } from "./components/PancakeMark";
+import { PreviewPanel } from "./components/PreviewPanel";
 import { ProgressPanel } from "./components/ProgressPanel";
 import { Queue } from "./components/Queue";
 import { Summary } from "./components/Summary";
@@ -55,6 +56,7 @@ export default function App() {
   const [cancelling, setCancelling] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [comparing, setComparing] = useState<number | null>(null);
 
   const pending = useRef<BatchEvent[]>([]);
   const lastMilestone = useRef(-1);
@@ -175,7 +177,19 @@ export default function App() {
     await run(() => cancelBatch(progress.batchId));
   }
 
+  function closePreview() {
+    const index = comparing;
+    setComparing(null);
+    // Return focus to the Compare button that opened the panel.
+    window.setTimeout(() => {
+      if (index !== null) {
+        document.querySelector<HTMLButtonElement>(`[data-compare-index="${index}"]`)?.focus();
+      }
+    }, 0);
+  }
+
   function startAgain() {
+    setComparing(null);
     setSelection(null);
     setProgress(null);
     setSnapshot(null);
@@ -258,8 +272,17 @@ export default function App() {
           </div>
         )}
 
+        {progress && comparing !== null && progress.files[comparing] && (
+          <PreviewPanel
+            batchId={progress.batchId}
+            fileIndex={comparing}
+            fileName={progress.files[comparing]?.file ?? ""}
+            onClose={closePreview}
+          />
+        )}
+
         {progress && (stage === "running" || stage === "finished") && (
-          <Queue total={progress.total} rows={progress.files} />
+          <Queue total={progress.total} rows={progress.files} onCompare={setComparing} />
         )}
       </main>
 

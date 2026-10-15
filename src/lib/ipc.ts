@@ -147,3 +147,15 @@ export async function subscribe<T>(name: string, handler: (payload: T) => void):
 export function openOutputFolder(batchId: string): Promise<void> {
   return invoke<void>("open_output_folder", { batchId });
 }
+
+/** Mirrors `PreviewDto`: a small PNG made in Rust, plus the full size. */
+export interface Preview {
+  dataUrl: string;
+  width: number;
+  height: number;
+  bytes: number;
+}
+
+export function requestPreview(batchId: string, fileIndex: number, side: "original" | "output"): Promise<Preview> {
+  return invoke<Preview>("request_preview", { batchId, fileIndex, side });
+}

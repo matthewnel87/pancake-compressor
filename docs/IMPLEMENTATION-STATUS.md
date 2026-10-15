@@ -187,3 +187,11 @@ Peak memory for the whole run: **1.01 GB** (`/usr/bin/time -l`). For M2 this mea
 | Reduced motion, theme override | Implemented (CSS) | Not yet visually checked at 200% zoom |
 | Real end-to-end run in the desktop app | **Not done** | Needs a person (or Accessibility/Screen Recording permission) to click through; see M3 gate |
 | Logo | Placeholder unchanged | Three concepts still to be produced for maintainer choice |
+
+## M3 step 2: logo concepts and preview — 2026-10-15
+
+| Area | Status | Evidence |
+|---|---|---|
+| Logo concepts A, A2, B, C | Delivered for maintainer choice | `assets/brand/concepts/` with comparison sheet at 16–256 px light/dark; A2 recommended; **not final** |
+| Before/after preview | Implemented, tested | Engine: thumbnail upright, ≤ max side, never upscaled; bridge: base64 RFC vectors; UI: Compare flow, fallback, Escape closes (`npm run test` 10 tests) |
+| Real app run of preview | **Not done** | Needs a person |

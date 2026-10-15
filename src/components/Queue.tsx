@@ -17,6 +17,8 @@ const OVERSCAN = 6;
 interface QueueProps {
   total: number;
   rows: Record<number, FileRow>;
+  /** Called with a file's index when its Compare button is pressed. */
+  onCompare?: (fileIndex: number) => void;
 }
 
 function resultText(row: FileRow | undefined): string {
@@ -28,16 +30,15 @@ function resultText(row: FileRow | undefined): string {
   return messageFor(row.code) || "—";
 }
 
-export function Queue({ total, rows }: QueueProps) {
+export function Queue({ total, rows, onCompare }: QueueProps) {
   const [scrollTop, setScrollTop] = useState(0);
   if (total === 0) return null;
 
   const first = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
   const last = Math.min(total, Math.ceil((scrollTop + VIEW_HEIGHT) / ROW_HEIGHT) + OVERSCAN);
-  const visible = [];
-  for (let index = first; index < last; index += 1) {
+  const visible = Array.from({ length: last - first }, (_, offset) => first + offset).map((index) => {
     const row = rows[index];
-    visible.push(
+    return (
       <div
         key={index}
         role="row"
@@ -48,16 +49,29 @@ export function Queue({ total, rows }: QueueProps) {
         <span role="cell" className="truncate" title={row?.file}>
           {row?.file ?? `File ${index + 1}`}
         </span>
-        <span role="cell">{stateLabel(row?.state ?? "queued")}</span>
+        <span role="cell" className="flex items-center gap-2">
+          {stateLabel(row?.state ?? "queued")}
+          {row?.state === "completed" && onCompare && (
+            <button
+              type="button"
+              className="rounded-control border border-line px-2 py-1 text-xs"
+              aria-label={`Compare before and after for ${row.file}`}
+              data-compare-index={index}
+              onClick={() => onCompare(index)}
+            >
+              Compare
+            </button>
+          )}
+        </span>
         <span role="cell" className="tabular-nums text-ink-muted">
           <span className="block truncate">{resultText(row)}</span>
           {row && row.notices.length > 0 && (
             <span className="block truncate text-xs">{row.notices.map(noticeText).join(" · ")}</span>
           )}
         </span>
-      </div>,
+      </div>
     );
-  }
+  });
 
   return (
     <div role="table" aria-label="Images in this batch" aria-rowcount={total + 1} className="rounded-card border border-line">

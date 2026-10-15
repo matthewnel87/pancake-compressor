@@ -21,7 +21,7 @@ use pancake_core::batch::{
     self, BatchSettings, CancelToken, Event, Finished, Phase, Summary, Update,
 };
 use pancake_core::output::ConflictPolicy;
-use pancake_core::scan::{OUTPUT_FOLDER_NAME, ScanResult, scan};
+use pancake_core::scan::{OUTPUT_FOLDER_NAME, ScanResult, ScannedFile, scan};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
@@ -34,6 +34,9 @@ pub const BATCH_EVENT: &str = "batch-event";
 pub struct AppState {
     next_id: AtomicU64,
     inputs: Mutex<HashMap<String, Selection>>,
+    /// Held while a preview decodes, so previews never run in parallel
+    /// with each other (docs/23: bounded preview work).
+    preview_lock: Mutex<()>,
     outputs: Mutex<HashMap<String, PathBuf>>,
     batches: Mutex<HashMap<String, Running>>,
 }
@@ -46,6 +49,10 @@ struct Selection {
 struct Running {
     cancel: CancelToken,
     snapshot: Arc<Mutex<SnapshotDto>>,
+    /// The batch's files, for previews of originals.
+    files: Arc<Vec<ScannedFile>>,
+    /// Output path of each completed file, recorded from engine events.
+    outputs: Arc<Mutex<HashMap<usize, PathBuf>>>,
     /// Kept in Rust so "open output folder" never takes a path from the UI.
     output_root: PathBuf,
 }
@@ -416,6 +423,8 @@ pub fn start_batch(
         total: files.len(),
         ..SnapshotDto::default()
     }));
+    let files = Arc::new(files);
+    let outputs: Arc<Mutex<HashMap<usize, PathBuf>>> = Arc::default();
     state
         .batches
         .lock()
@@ -426,6 +435,8 @@ pub fn start_batch(
                 cancel: cancel.clone(),
                 snapshot: Arc::clone(&snapshot),
                 output_root: output_root.clone(),
+                files: Arc::clone(&files),
+                outputs: Arc::clone(&outputs),
             },
         );
 
@@ -435,6 +446,11 @@ pub fn start_batch(
         .name(format!("pancake-{id}"))
         .spawn(move || {
             let sink = |event: &Event| {
+                if let Update::Finished(Finished::Completed { output, .. }) = &event.update
+                    && let Ok(mut map) = outputs.lock()
+                {
+                    map.insert(event.file_index, output.clone());
+                }
                 let relative = files
                     .get(event.file_index)
                     .map(|f| f.relative.as_path())
@@ -510,6 +526,85 @@ pub fn handle_drag_drop(app: &AppHandle, event: &tauri::DragDropEvent) {
         }
         _ => {}
     }
+}
+
+/// A small preview image for one file of a batch.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewDto {
+    /// `data:image/png;base64,...`, at most [`PREVIEW_MAX_SIDE`] px.
+    pub data_url: String,
+    /// Full upright size of the image the preview was made from.
+    pub width: u32,
+    pub height: u32,
+    pub bytes: u64,
+}
+
+/// Longest side of a preview, in pixels.
+pub const PREVIEW_MAX_SIDE: u32 = 640;
+
+/// Standard base64 (RFC 4648) for data URLs.
+pub fn base64(data: &[u8]) -> String {
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
+    for chunk in data.chunks(3) {
+        let b = [
+            chunk[0],
+            *chunk.get(1).unwrap_or(&0),
+            *chunk.get(2).unwrap_or(&0),
+        ];
+        let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
+        for i in 0..4 {
+            if i <= chunk.len() {
+                out.push(char::from(ALPHABET[((n >> (18 - 6 * i)) & 63) as usize]));
+            } else {
+                out.push('=');
+            }
+        }
+    }
+    out
+}
+
+/// Makes a preview of a file's original (`side = "original"`) or its
+/// compressed output (`"output"`). Paths come from Rust's records of the
+/// batch; the UI only names the batch, file index and side.
+#[tauri::command]
+pub async fn request_preview(
+    state: State<'_, AppState>,
+    batch_id: String,
+    file_index: usize,
+    side: String,
+) -> Result<PreviewDto, String> {
+    let path = {
+        let batches = state.batches.lock().map_err(|_| "state-unavailable")?;
+        let running = batches.get(&batch_id).ok_or("unknown-batch")?;
+        let found = match side.as_str() {
+            "original" => running.files.get(file_index).map(|f| f.path.clone()),
+            "output" => running
+                .outputs
+                .lock()
+                .map_err(|_| "state-unavailable")?
+                .get(&file_index)
+                .cloned(),
+            _ => return Err("invalid-preview-side".into()),
+        };
+        found.ok_or("no-such-file")?
+    };
+    let _one_at_a_time = state.preview_lock.lock().map_err(|_| "state-unavailable")?;
+    let metadata = std::fs::metadata(&path).map_err(|_| "preview-unreadable")?;
+    if metadata.len() > batch::MAX_INPUT_BYTES {
+        return Err("preview-too-large".into());
+    }
+    let bytes = std::fs::read(&path).map_err(|_| "preview-unreadable")?;
+    let limits = pancake_core::limits::ImageLimits::default();
+    let (png, width, height) = pancake_core::decode::preview_png(&bytes, &limits, PREVIEW_MAX_SIDE)
+        .map_err(|error| error.code().to_owned())?;
+    Ok(PreviewDto {
+        data_url: format!("data:image/png;base64,{}", base64(&png)),
+        width,
+        height,
+        bytes: metadata.len(),
+    })
 }
 
 /// Returns the latest known state of a batch.
