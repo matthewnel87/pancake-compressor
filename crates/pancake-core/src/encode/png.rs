@@ -12,14 +12,16 @@
 //! with `imagequant` (the library behind pngquant, GPL-3.0-or-later; the
 //! reason the project is GPL, ADR-005), writes an indexed PNG and then
 //! compresses it losslessly with `oxipng`. It is never described as lossless
-//! or "visually lossless" (docs/07). 16-bit sources are reduced to 8 bits.
-//! The ICC profile is carried over; other metadata is not yet (PNK-013).
+//! or "visually lossless" (docs/07). Like the other converting encoders it
+//! applies EXIF orientation to the pixels, reduces 16-bit sources to 8 bits,
+//! and carries the ICC profile, EXIF (`eXIf`, orientation reset to upright)
+//! and XMP (`iTXt`), reporting anything it could not keep.
 
 use std::borrow::Cow;
 
 use oxipng::{Options, StripChunks};
 
-use super::{EncodeError, has_transparency};
+use super::{Adjustments, EncodeError, Encoded, carry_metadata, has_transparency, upright};
 use crate::decode::{DecodedImage, decode};
 use crate::format::ImageFormat;
 use crate::limits::ImageLimits;
@@ -91,7 +93,12 @@ pub fn optimise_lossless(
     }
     let output = oxipng::optimize_from_memory(source, &lossless_settings(options.effort, decoded))
         .map_err(map_oxipng_error)?;
-    verify(&output, decoded, Exactness::Identical)?;
+    // Lossless recompression must give back every pixel unchanged (compared
+    // at 16 bits, so bit-depth reductions pass only when exact).
+    let reopened = reopen(&output, (decoded.info.width, decoded.info.height))?;
+    if reopened.pixels.to_rgba16() != decoded.pixels.to_rgba16() {
+        return Err(EncodeError::VerificationFailed(F));
+    }
     Ok(output)
 }
 
@@ -103,9 +110,14 @@ pub fn optimise_lossless(
 pub fn quantise_lossy(
     decoded: &DecodedImage,
     options: LossyOptions,
-) -> Result<Vec<u8>, EncodeError> {
+) -> Result<Encoded, EncodeError> {
     validate(&options)?;
-    let rgba = decoded.pixels.to_rgba8();
+    let (upright_pixels, orientation_applied) = upright(decoded);
+    let precision_reduced =
+        upright_pixels.color().bytes_per_pixel() / upright_pixels.color().channel_count() >= 2;
+    let source_has_alpha = has_transparency(&upright_pixels);
+    let rgba = upright_pixels.to_rgba8();
+    drop(upright_pixels);
     let (width, height) = rgba.dimensions();
     let pixels: Vec<imagequant::RGBA> = rgba
         .pixels()
@@ -128,18 +140,52 @@ pub fn quantise_lossy(
         .map_err(|_| EncodeError::InvalidOptions("dithering must be 0.0-1.0"))?;
     let (palette, indices) = result.remapped(&mut image).map_err(map_imagequant_error)?;
 
+    let mut carried = carry_metadata(decoded, Some(u32::MAX as usize), Some(u32::MAX as usize));
+    // iTXt text must be UTF-8; an XMP packet that is not cannot be stored.
+    let xmp = match carried.xmp.as_deref().map(std::str::from_utf8) {
+        Some(Ok(text)) => Some(text),
+        Some(Err(_)) => {
+            carried.dropped = true;
+            None
+        }
+        None => None,
+    };
     let indexed = write_indexed(
         width,
         height,
         &palette,
         &indices,
-        decoded.icc_profile.as_deref(),
+        Metadata {
+            icc: decoded.icc_profile.as_deref(),
+            exif: carried.exif.as_deref(),
+            xmp,
+        },
     )?;
     // Indexed PNGs are compressed losslessly afterwards; effort 2 as default.
     let output = oxipng::optimize_from_memory(&indexed, &lossless_settings(2, decoded))
         .map_err(map_oxipng_error)?;
-    verify(&output, decoded, Exactness::SameShape)?;
-    Ok(output)
+    let reopened = reopen(&output, (width, height))?;
+    if source_has_alpha && !has_transparency(&reopened.pixels) {
+        return Err(EncodeError::VerificationFailed(F));
+    }
+    Ok(Encoded {
+        bytes: output,
+        adjustments: Adjustments {
+            orientation_applied,
+            transparency_flattened: false,
+            precision_reduced,
+            colour_profile_dropped: false,
+            metadata_dropped: carried.dropped,
+        },
+    })
+}
+
+/// Metadata to write into a new PNG.
+struct Metadata<'a> {
+    icc: Option<&'a [u8]>,
+    /// Bare TIFF block.
+    exif: Option<&'a [u8]>,
+    xmp: Option<&'a str>,
 }
 
 fn validate(options: &LossyOptions) -> Result<(), EncodeError> {
@@ -179,7 +225,7 @@ fn write_indexed(
     height: u32,
     palette: &[imagequant::RGBA],
     indices: &[u8],
-    icc_profile: Option<&[u8]>,
+    metadata: Metadata<'_>,
 ) -> Result<Vec<u8>, EncodeError> {
     let rgb: Vec<u8> = palette.iter().flat_map(|c| [c.r, c.g, c.b]).collect();
     // tRNS lists alpha per palette entry; trailing opaque entries can be
@@ -196,14 +242,23 @@ fn write_indexed(
     if !alpha.is_empty() {
         info.trns = Some(Cow::Owned(alpha));
     }
-    if let Some(profile) = icc_profile {
+    if let Some(profile) = metadata.icc {
         info.icc_profile = Some(Cow::Borrowed(profile));
+    }
+    if let Some(exif) = metadata.exif {
+        info.exif_metadata = Some(Cow::Borrowed(exif));
     }
 
     let mut out = Vec::new();
-    let mut writer = ::png::Encoder::with_info(&mut out, info)
-        .and_then(::png::Encoder::write_header)
-        .map_err(|_| EncodeError::Failed(F))?;
+    let mut encoder =
+        ::png::Encoder::with_info(&mut out, info).map_err(|_| EncodeError::Failed(F))?;
+    if let Some(xmp) = metadata.xmp {
+        // Standard keyword for XMP in PNG (XMP specification part 3).
+        encoder
+            .add_itxt_chunk("XML:com.adobe.xmp".to_owned(), xmp.to_owned())
+            .map_err(|_| EncodeError::Failed(F))?;
+    }
+    let mut writer = encoder.write_header().map_err(|_| EncodeError::Failed(F))?;
     writer
         .write_image_data(indices)
         .and_then(|()| writer.finish())
@@ -211,36 +266,14 @@ fn write_indexed(
     Ok(out)
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum Exactness {
-    /// Every pixel, including alpha, must match (compared at 16 bits so bit
-    /// depth reductions are allowed only when exact).
-    Identical,
-    /// Same dimensions, and transparency must survive if the source had any.
-    SameShape,
-}
-
-fn verify(output: &[u8], source: &DecodedImage, exactness: Exactness) -> Result<(), EncodeError> {
+/// Decodes an output again and checks it is a PNG of the expected size.
+fn reopen(output: &[u8], size: (u32, u32)) -> Result<DecodedImage, EncodeError> {
     let fail = EncodeError::VerificationFailed(F);
     let reopened = decode(output, &ImageLimits::default()).map_err(|_| fail.clone())?;
-    if reopened.info.format != F
-        || (reopened.info.width, reopened.info.height) != (source.info.width, source.info.height)
-    {
+    if reopened.info.format != F || (reopened.info.width, reopened.info.height) != size {
         return Err(fail);
     }
-    match exactness {
-        Exactness::Identical => {
-            if reopened.pixels.to_rgba16() != source.pixels.to_rgba16() {
-                return Err(fail);
-            }
-        }
-        Exactness::SameShape => {
-            if has_transparency(&source.pixels) && !has_transparency(&reopened.pixels) {
-                return Err(fail);
-            }
-        }
-    }
-    Ok(())
+    Ok(reopened)
 }
 
 fn map_oxipng_error(error: oxipng::PngError) -> EncodeError {

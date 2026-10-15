@@ -130,3 +130,15 @@ Synthetic 4000×3000 input (gradients + grain + hard edges), PNG source 19,871,6
 | AVIF q70 speed 6, 1 thread | 51,645 | 0.3% | 6.98 s |
 
 Peak memory for the whole run: **1.01 GB** (`/usr/bin/time -l`). For M2 this means roughly 1 GB per concurrent 12 MP job until the extra pixel copies (orientation clone, RGBA conversions, verification decode) are reduced. **Windows and Intel numbers not measured yet.**
+
+## M1 step 5: metadata (PNK-013) — 2026-10-15 (branch `m1-metadata`, stacked on `m1-encoders`)
+
+| Area | Status | Evidence |
+|---|---|---|
+| EXIF/XMP read on decode (PNG, JPEG, WebP) | Implemented | `DecodedImage.exif` / `.xmp` |
+| EXIF orientation reset | Implemented, tested | Both byte orders; every truncation; non-standard layouts refused (`metadata.rs` tests + doctest) |
+| Carriage per format | Tested | `tests/metadata_round_trip.rs`: JPEG, WebP lossy/lossless, PNG palette keep EXIF+XMP; AVIF keeps EXIF, reports XMP dropped; all outputs upright, re-read EXIF says upright |
+| Unreadable EXIF | Tested | Not copied, reported as dropped |
+| **Bug fixed** | PNG palette ignored EXIF orientation | Sideways camera images would have stayed sideways with orientation lost. Now rotated and reported like the other encoders |
+| Not done | | EXIF/XMP in AVIF **inputs** not read; PNG metadata after IDAT not read; extended XMP for JPEG; IPTC not carried; privacy-first strip option (M2/M3) |
+| Checks on macOS arm64 | Passed | 70 unit + matrix + 3 metadata + 2 API tests + 4 doctests; clippy clean; `cargo deny check` clean |

@@ -11,7 +11,8 @@
 | `crates/pancake-core/src/format.rs` | Header-only identification: magic bytes, declared dimensions, alpha hint, animation refusal (ADR-025) and `preflight`, which every file must pass before decoding. Tests and synthetic fixture builders are in `format/tests.rs`. |
 | `crates/pancake-core/src/decode.rs` | Decodes PNG, JPEG and still WebP (pure Rust, `image` crate) after preflight, with decoder limits taken from the header; reports EXIF orientation and ICC profile without applying them. |
 | `crates/pancake-core/src/decode/avif.rs` | AVIF decoding via `avif-decode`, with a pre-check that the AV1 stream cannot declare a bigger frame than the container (ADR-027). |
-| `crates/pancake-core/src/encode.rs` | Encoder error type. Every encoder re-decodes and checks its own output before returning it. |
+| `crates/pancake-core/src/encode.rs` | Shared encoder types (`Encoded`, `Adjustments`, errors) and helpers for orientation and metadata carriage. Every encoder re-decodes and checks its own output before returning it. |
+| `crates/pancake-core/src/metadata.rs` | Bounds-checked EXIF reader that resets orientation to upright (ADR-034). |
 | `crates/pancake-core/src/encode/png.rs` | Lossless PNG (`oxipng`, pixel-identical) and lossy palette PNG (`imagequant`) (ADR-029). |
 | `crates/pancake-core/src/encode/jpeg.rs` | JPEG via MozJPEG: applies EXIF orientation, flattens transparency onto a matte and reports both in `Adjustments`; carries ICC (ADR-031). |
 | `crates/pancake-core/src/encode/webp.rs` | Still WebP via libwebp, lossy or lossless (exact), keeps alpha; embeds ICC with a small RIFF edit (ADR-032). |

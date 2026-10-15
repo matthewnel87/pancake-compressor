@@ -12,9 +12,10 @@
 //! [`avif`](self::avif) module notes).
 //!
 //! **What it does not do:** rotate pixels for EXIF orientation, convert
-//! colour profiles or drop metadata. It reports the orientation and ICC
-//! profile it found so the encoding steps can apply the policy in
-//! `docs/07-image-format-contract.md` explicitly.
+//! colour profiles or drop metadata. It reports the orientation, ICC profile,
+//! EXIF and XMP it found so the encoding steps can apply the policy in
+//! `docs/07-image-format-contract.md` explicitly. PNG metadata stored after
+//! the image data is not seen, because only the header is read for it.
 
 use std::fmt;
 use std::io::Cursor;
@@ -46,6 +47,10 @@ pub struct DecodedImage {
     pub orientation: Orientation,
     /// Embedded ICC colour profile, if any, unmodified.
     pub icc_profile: Option<Vec<u8>>,
+    /// EXIF block as stored (may start with `"Exif\0\0"`), unmodified.
+    pub exif: Option<Vec<u8>>,
+    /// XMP packet (UTF-8 XML), unmodified.
+    pub xmp: Option<Vec<u8>>,
 }
 
 /// Why decoding failed. Each variant has a stable [`DecodeError::code`].
@@ -141,6 +146,8 @@ pub fn decode(bytes: &[u8], limits: &ImageLimits) -> Result<DecodedImage, Decode
         .map_err(|error| classify(info.format, &error))?;
     let orientation = decoder.orientation().unwrap_or(Orientation::NoTransforms);
     let icc_profile = decoder.icc_profile().ok().flatten();
+    let exif = decoder.exif_metadata().ok().flatten();
+    let xmp = decoder.xmp_metadata().ok().flatten();
     let pixels =
         DynamicImage::from_decoder(decoder).map_err(|error| classify(info.format, &error))?;
 
@@ -158,6 +165,8 @@ pub fn decode(bytes: &[u8], limits: &ImageLimits) -> Result<DecodedImage, Decode
         pixels,
         orientation,
         icc_profile,
+        exif,
+        xmp,
     })
 }
 

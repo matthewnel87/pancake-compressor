@@ -106,7 +106,7 @@ fn every_input_format_converts_to_every_output() {
         let palette = png::quantise_lossy(&source, png::LossyOptions::default());
         match palette {
             Ok(out) => {
-                let back = open(&out);
+                let back = open(&out.bytes);
                 assert_eq!((back.info.width, back.info.height), (W, H));
                 assert_eq!(
                     transparent(&back.pixels),

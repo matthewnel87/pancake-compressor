@@ -14,13 +14,15 @@
 //!   unless [`AvifOptions::allow_colour_profile_loss`] is set, in which case
 //!   `colour_profile_dropped` is reported (docs/07: explain and ask, never
 //!   discard silently). Proper conversion to sRGB is PNK-013 work.
+//! - **EXIF** is carried (orientation reset to upright); **XMP** cannot be
+//!   stored by ravif and is reported as `metadata_dropped`.
 //! - **Speed:** AV1 encoding is slow. `threads` defaults to 1 so the batch
 //!   engine (M2) decides how much of the machine one AVIF may use.
 
 use image::GenericImageView;
 use ravif::{Encoder, Img, RGBA8};
 
-use super::{Adjustments, EncodeError, Encoded, has_transparency, upright};
+use super::{Adjustments, EncodeError, Encoded, carry_metadata, has_transparency, upright};
 use crate::decode::{DecodedImage, decode};
 use crate::format::ImageFormat;
 use crate::limits::ImageLimits;
@@ -82,11 +84,15 @@ pub fn encode(decoded: &DecodedImage, options: AvifOptions) -> Result<Encoded, E
         .map(|p| RGBA8::new(p[0], p[1], p[2], p[3]))
         .collect();
 
-    let encoder = Encoder::new()
+    let carried = carry_metadata(decoded, Some(usize::MAX), None);
+    let mut encoder = Encoder::new()
         .with_quality(options.quality)
         .with_alpha_quality(options.alpha_quality)
         .with_speed(options.speed)
         .with_num_threads(Some(options.threads));
+    if let Some(tiff) = carried.exif {
+        encoder = encoder.with_exif(tiff);
+    }
     let img = Img::new(&buffer[..], width as usize, height as usize);
     // encode_rgba drops a fully opaque alpha channel by itself.
     let bytes = encoder
@@ -105,6 +111,7 @@ pub fn encode(decoded: &DecodedImage, options: AvifOptions) -> Result<Encoded, E
             precision_reduced: pixels.color().bytes_per_pixel() / pixels.color().channel_count()
                 >= 2,
             colour_profile_dropped,
+            metadata_dropped: carried.dropped,
         },
     })
 }

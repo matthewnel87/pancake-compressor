@@ -124,8 +124,15 @@ fn icc_profile_survives_every_webp_layout() {
 }
 
 #[test]
-fn embed_icc_rejects_non_webp_input() {
-    assert_eq!(embed_icc(b"not a webp file", b"icc", 1, 1, false), None);
+fn embed_metadata_rejects_non_webp_input() {
+    let extras = Extras {
+        icc: Some(b"icc"),
+        ..Extras::default()
+    };
+    assert_eq!(
+        embed_metadata(b"not a webp file", extras, 1, 1, false),
+        None
+    );
 }
 
 #[test]

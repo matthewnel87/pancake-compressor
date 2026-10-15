@@ -76,6 +76,9 @@ pub(super) fn decode(bytes: &[u8], info: ImageInfo) -> Result<DecodedImage, Deco
         // irot/imir files are refused at preflight, so no transform applies.
         orientation: Orientation::NoTransforms,
         icc_profile: None,
+        // Not read from AVIF yet (status ledger); nothing to carry over.
+        exif: None,
+        xmp: None,
     })
 }
 

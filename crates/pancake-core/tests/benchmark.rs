@@ -74,6 +74,7 @@ fn encoder_size_and_time() {
     report("png palette (default)", &mut || {
         png::quantise_lossy(&source, png::LossyOptions::default())
             .unwrap_or_else(|error| panic!("{error:?}"))
+            .bytes
     });
     report("jpeg q80 4:2:0", &mut || {
         jpeg::encode(&source, jpeg::JpegOptions::default())

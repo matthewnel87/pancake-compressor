@@ -12,7 +12,10 @@
 //!   `transparency_flattened` is set so the UI can warn.
 //! - **Precision:** 16-bit sources are reduced to 8 bits.
 //! - **Colour profile:** the source ICC profile is written as standard
-//!   `ICC_PROFILE` APP2 segments. EXIF/XMP are not carried yet (PNK-013).
+//!   `ICC_PROFILE` APP2 segments.
+//! - **EXIF/XMP** are carried in APP1 segments, with the EXIF orientation
+//!   reset to upright (see `crate::metadata`). Anything that does not fit in
+//!   one segment is reported as `metadata_dropped`.
 //!
 //! **Panics:** MozJPEG reports libjpeg errors by unwinding a panic through
 //! its C code, and its documentation requires `catch_unwind` around every
@@ -24,10 +27,16 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use image::{DynamicImage, GenericImageView};
 use mozjpeg::{ColorSpace, Compress, Marker};
 
-use super::{Adjustments, EncodeError, Encoded, has_transparency, upright};
+use super::{
+    Adjustments, Carried, EncodeError, Encoded, carry_metadata, has_transparency, upright,
+};
 use crate::decode::{DecodedImage, decode};
 use crate::format::ImageFormat;
 use crate::limits::ImageLimits;
+use crate::metadata::{JPEG_XMP_HEADER, JPEG_XMP_MAX};
+
+/// Largest TIFF block that fits one APP1 segment after `"Exif\0\0"`.
+const JPEG_EXIF_MAX: usize = 65_533 - 6;
 
 const F: ImageFormat = ImageFormat::Jpeg;
 
@@ -78,6 +87,7 @@ pub fn encode(decoded: &DecodedImage, options: JpegOptions) -> Result<Encoded, E
         return Err(EncodeError::Failed(F));
     }
 
+    let carried = carry_metadata(decoded, Some(JPEG_EXIF_MAX), Some(JPEG_XMP_MAX));
     let (pixels, orientation_applied) = upright(decoded);
     let transparency_flattened = has_transparency(&pixels);
     let precision_reduced = matches!(
@@ -95,6 +105,7 @@ pub fn encode(decoded: &DecodedImage, options: JpegOptions) -> Result<Encoded, E
         grey,
         options,
         decoded.icc_profile.as_deref(),
+        &carried,
     )?;
     verify(&bytes, width, height, &samples, grey)?;
     Ok(Encoded {
@@ -104,6 +115,7 @@ pub fn encode(decoded: &DecodedImage, options: JpegOptions) -> Result<Encoded, E
             transparency_flattened,
             precision_reduced,
             colour_profile_dropped: false,
+            metadata_dropped: carried.dropped,
         },
     })
 }
@@ -141,6 +153,7 @@ fn run_mozjpeg(
     grey: bool,
     options: JpegOptions,
     icc_profile: Option<&[u8]>,
+    carried: &Carried,
 ) -> Result<Vec<u8>, EncodeError> {
     let result = catch_unwind(AssertUnwindSafe(|| -> std::io::Result<Vec<u8>> {
         let mut compress = Compress::new(if grey {
@@ -160,6 +173,16 @@ fn run_mozjpeg(
             compress.set_chroma_sampling_pixel_sizes(colour, colour);
         }
         let mut started = compress.start_compress(Vec::new())?;
+        if let Some(tiff) = &carried.exif {
+            let mut segment = b"Exif\0\0".to_vec();
+            segment.extend_from_slice(tiff);
+            started.write_marker(Marker::APP(1), &segment);
+        }
+        if let Some(packet) = &carried.xmp {
+            let mut segment = JPEG_XMP_HEADER.to_vec();
+            segment.extend_from_slice(packet);
+            started.write_marker(Marker::APP(1), &segment);
+        }
         if let Some(profile) = icc_profile {
             for segment in icc_segments(profile) {
                 started.write_marker(Marker::APP(2), &segment);

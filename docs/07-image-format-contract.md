@@ -75,4 +75,14 @@ What the engine actually does today, checked by `crates/pancake-core/tests/forma
 | WebP lossless (libwebp, exact) | Yes, pixel-identical | Yes (prior JPEG loss remains) | Yes | Yes | Kept exactly | |
 | AVIF (ravif) | Yes | Yes | Yes | Yes | Kept | Lossy only. Source ICC profile: refused unless loss allowed, then reported |
 
-**Metadata today:** ICC profiles are carried by PNG palette, JPEG and WebP outputs, and by PNG lossless (all chunks kept). EXIF/XMP are not written by converting encoders (orientation is applied to pixels instead). The full keep/strip policy is PNK-013.
+**Metadata today (ADR-034):**
+
+| Output | ICC | EXIF (orientation reset to upright) | XMP |
+|---|---|---|---|
+| PNG lossless | Kept as-is (all chunks, pixels untouched) | Kept as-is | Kept as-is |
+| PNG palette | Kept (`iCCP`) | Kept (`eXIf`) | Kept (`iTXt` `XML:com.adobe.xmp`) if valid UTF-8 |
+| JPEG | Kept (APP2, multi-segment) | Kept (APP1) up to 65,527 bytes | Kept (APP1) up to 65,504 bytes; larger needs extended XMP (not implemented) |
+| WebP | Kept (`ICCP`) | Kept (`EXIF`) | Kept (`XMP `) |
+| AVIF | **Not storable:** refused unless loss allowed | Kept (Exif item) | **Not storable:** reported as dropped |
+
+Anything not kept is reported (`metadata_dropped` / `colour_profile_dropped`), never silent. EXIF that cannot be parsed safely is not copied (it could re-rotate the upright image) and is reported as dropped. **Not read yet:** EXIF/XMP inside AVIF inputs, and PNG metadata chunks placed after the image data.

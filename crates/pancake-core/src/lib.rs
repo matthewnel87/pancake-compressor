@@ -23,6 +23,7 @@ pub mod decode;
 pub mod encode;
 pub mod format;
 pub mod limits;
+pub mod metadata;
 
 /// Version of the engine crate, taken from Cargo at compile time.
 ///

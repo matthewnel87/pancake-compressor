@@ -38,6 +38,41 @@ pub struct Adjustments {
     /// The source's ICC colour profile could not be written to this format
     /// and the caller explicitly allowed dropping it; colours may shift.
     pub colour_profile_dropped: bool,
+    /// The source had EXIF or XMP that this output could not carry (format
+    /// cannot store it, it was too large, or the EXIF could not be safely
+    /// rewritten). See `crate::metadata`.
+    pub metadata_dropped: bool,
+}
+
+/// EXIF and XMP ready to write into an output, plus whether anything from
+/// the source had to be left out.
+pub(crate) struct Carried {
+    /// Bare TIFF block with orientation reset to upright.
+    pub exif: Option<Vec<u8>>,
+    pub xmp: Option<Vec<u8>>,
+    pub dropped: bool,
+}
+
+/// Prepares the source's EXIF/XMP for an output that can store EXIF up to
+/// `exif_limit` bytes and XMP up to `xmp_limit` bytes (`None`: cannot store).
+pub(crate) fn carry_metadata(
+    decoded: &DecodedImage,
+    exif_limit: Option<usize>,
+    xmp_limit: Option<usize>,
+) -> Carried {
+    let mut dropped = false;
+    let exif = decoded.exif.as_deref().and_then(|raw| {
+        let fixed = crate::metadata::exif_upright(raw)
+            .filter(|tiff| exif_limit.is_some_and(|max| tiff.len() <= max));
+        dropped |= fixed.is_none();
+        fixed
+    });
+    let xmp = decoded.xmp.as_ref().and_then(|packet| {
+        let kept = xmp_limit.is_some_and(|max| packet.len() <= max);
+        dropped |= !kept;
+        kept.then(|| packet.clone())
+    });
+    Carried { exif, xmp, dropped }
 }
 
 /// Encoded bytes plus what had to change to produce them.

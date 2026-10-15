@@ -8,11 +8,13 @@
 //! - **Orientation and precision** follow the same policy as JPEG: EXIF
 //!   orientation is applied to the pixels (no EXIF is written), 16-bit
 //!   sources are reduced to 8 bits, and both are reported in [`Adjustments`].
-//! - **Colour profile:** libwebp's simple encoder cannot embed an ICC
-//!   profile, so [`embed_icc`] adds the extended-format `VP8X` header and an
-//!   `ICCP` chunk to its output (RIFF container spec:
-//!   <https://developers.google.com/speed/webp/docs/riff_container>). If
-//!   that is not possible the encode fails rather than dropping the profile.
+//! - **Colour profile, EXIF and XMP:** libwebp's simple encoder writes none
+//!   of them, so [`embed_metadata`] adds the extended-format `VP8X` header
+//!   and `ICCP`, `EXIF` and `XMP ` chunks to its output in the order the
+//!   RIFF container spec requires
+//!   (<https://developers.google.com/speed/webp/docs/riff_container>). EXIF
+//!   orientation is reset to upright. If the container cannot be rebuilt the
+//!   encode fails rather than dropping anything.
 //!
 //! The `webp` crate's convenience `encode()` calls `unwrap()` internally, so
 //! only `encode_advanced` with a configuration built here is used.
@@ -20,7 +22,9 @@
 use image::GenericImageView;
 use webp::{Encoder, WebPConfig};
 
-use super::{Adjustments, EncodeError, Encoded, has_transparency, upright};
+use super::{
+    Adjustments, Carried, EncodeError, Encoded, carry_metadata, has_transparency, upright,
+};
 use crate::decode::{DecodedImage, decode};
 use crate::format::ImageFormat;
 use crate::limits::ImageLimits;
@@ -85,27 +89,37 @@ pub fn encode(decoded: &DecodedImage, options: WebpOptions) -> Result<Encoded, E
     let bytes = encoded
         .map(|memory| memory.to_vec())
         .map_err(|_| EncodeError::Failed(F))?;
+    // RIFF chunk sizes are 32-bit; carry_metadata enforces that limit.
+    let carried = carry_metadata(decoded, Some(u32::MAX as usize), Some(u32::MAX as usize));
     let adjustments = Adjustments {
         orientation_applied,
         transparency_flattened: false,
         precision_reduced,
         colour_profile_dropped: false,
+        metadata_dropped: carried.dropped,
     };
-    finish(bytes, decoded, &rgba, options, adjustments, alpha)
+    finish(bytes, decoded, &carried, &rgba, options, adjustments, alpha)
 }
 
 fn finish(
     bytes: Vec<u8>,
     decoded: &DecodedImage,
+    carried: &Carried,
     expected: &image::RgbaImage,
     options: WebpOptions,
     adjustments: Adjustments,
     alpha: bool,
 ) -> Result<Encoded, EncodeError> {
-    let bytes = match &decoded.icc_profile {
-        Some(profile) => embed_icc(&bytes, profile, expected.width(), expected.height(), alpha)
-            .ok_or(EncodeError::Failed(F))?,
-        None => bytes,
+    let extras = Extras {
+        icc: decoded.icc_profile.as_deref(),
+        exif: carried.exif.as_deref(),
+        xmp: carried.xmp.as_deref(),
+    };
+    let bytes = if extras.is_empty() {
+        bytes
+    } else {
+        embed_metadata(&bytes, extras, expected.width(), expected.height(), alpha)
+            .ok_or(EncodeError::Failed(F))?
     };
     verify(&bytes, expected, options.lossless, alpha)?;
     Ok(Encoded { bytes, adjustments })
@@ -113,13 +127,38 @@ fn finish(
 
 const VP8X_ICC: u8 = 0x20;
 const VP8X_ALPHA: u8 = 0x10;
+const VP8X_EXIF: u8 = 0x08;
+const VP8X_XMP: u8 = 0x04;
 
-/// Inserts an `ICCP` chunk into a WebP file, converting a simple-format file
-/// (`VP8 `/`VP8L` only) to the extended format first. Returns `None` if the
-/// input is not a well-formed WebP or the result would exceed RIFF limits.
-pub(crate) fn embed_icc(
+/// Optional chunks to add to a WebP file.
+#[derive(Clone, Copy, Default)]
+pub(crate) struct Extras<'a> {
+    pub icc: Option<&'a [u8]>,
+    /// Bare TIFF block.
+    pub exif: Option<&'a [u8]>,
+    pub xmp: Option<&'a [u8]>,
+}
+
+impl Extras<'_> {
+    fn is_empty(&self) -> bool {
+        self.icc.is_none() && self.exif.is_none() && self.xmp.is_none()
+    }
+
+    fn flags(&self) -> u8 {
+        let flag = |present: bool, bit: u8| if present { bit } else { 0 };
+        flag(self.icc.is_some(), VP8X_ICC)
+            | flag(self.exif.is_some(), VP8X_EXIF)
+            | flag(self.xmp.is_some(), VP8X_XMP)
+    }
+}
+
+/// Adds `ICCP`, `EXIF` and `XMP ` chunks to a WebP file, converting a
+/// simple-format file (`VP8 `/`VP8L` only) to the extended format first.
+/// Returns `None` if the input is not a well-formed WebP or the result would
+/// exceed RIFF limits.
+pub(crate) fn embed_metadata(
     webp: &[u8],
-    profile: &[u8],
+    extras: Extras<'_>,
     width: u32,
     height: u32,
     alpha: bool,
@@ -155,14 +194,15 @@ pub(crate) fn embed_icc(
     let rest = match chunks.first() {
         Some((kind, data)) if *kind == b"VP8X" => {
             let mut header = data.to_vec();
-            *header.first_mut()? |= VP8X_ICC;
+            *header.first_mut()? |= extras.flags();
             push_chunk(b"VP8X", &header)?;
             &chunks[1..]
         }
         Some(_) => {
             // Build an extended header: flags, 3 reserved bytes, 24-bit
             // canvas width-1 and height-1.
-            let mut header = vec![VP8X_ICC | if alpha { VP8X_ALPHA } else { 0 }, 0, 0, 0];
+            let alpha_flag = if alpha { VP8X_ALPHA } else { 0 };
+            let mut header = vec![extras.flags() | alpha_flag, 0, 0, 0];
             header.extend_from_slice(&width.checked_sub(1)?.to_le_bytes()[..3]);
             header.extend_from_slice(&height.checked_sub(1)?.to_le_bytes()[..3]);
             push_chunk(b"VP8X", &header)?;
@@ -170,10 +210,18 @@ pub(crate) fn embed_icc(
         }
         None => return None,
     };
-    // ICCP must come straight after VP8X.
-    push_chunk(b"ICCP", profile)?;
+    // Required order: VP8X, ICCP, image data, EXIF, XMP.
+    if let Some(profile) = extras.icc {
+        push_chunk(b"ICCP", profile)?;
+    }
     for (kind, data) in rest {
         push_chunk(kind, data)?;
+    }
+    if let Some(exif) = extras.exif {
+        push_chunk(b"EXIF", exif)?;
+    }
+    if let Some(xmp) = extras.xmp {
+        push_chunk(b"XMP ", xmp)?;
     }
 
     let mut out = b"RIFF".to_vec();

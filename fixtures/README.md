@@ -18,3 +18,5 @@ Encoder-specific fixtures (oxipng, imagequant, MozJPEG, libwebp lossy) arrive
 with those codec steps.
 
 Integration fixtures: `crates/pancake-core/tests/format_matrix.rs` (48×32 RGBA gradient with transparent third and half-transparent band, re-encoded by this crate into each input format) and `tests/benchmark.rs` (synthetic 4000×3000 photo-like image, generated at run time). Both GPL-3.0-or-later, nothing stored on disk.
+
+Metadata fixtures: `crates/pancake-core/tests/metadata_round_trip.rs` builds a synthetic EXIF block (camera make "PancakeTestCam", orientation 6) and a minimal XMP packet (`dc:rights` "Synthetic fixture"); `src/metadata.rs` tests build little- and big-endian TIFF blocks byte by byte. No real camera files are used.

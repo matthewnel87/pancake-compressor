@@ -111,7 +111,8 @@ fn lossy_logo_becomes_small_indexed_png_and_keeps_transparency() {
     let source = logo(128, 128);
     let input = decoded(&png_bytes(&source));
     let output = quantise_lossy(&input, LossyOptions::default())
-        .unwrap_or_else(|error| unreachable!("{error:?}"));
+        .unwrap_or_else(|error| unreachable!("{error:?}"))
+        .bytes;
     assert_eq!(colour_type(&output), 3, "expected an indexed PNG");
     let after = decoded(&output).pixels.to_rgba8();
     // Four flat colours fit a palette exactly, including the alpha values.
@@ -129,7 +130,7 @@ fn lossy_refuses_rather_than_banding_when_quality_floor_is_unreachable() {
         ..LossyOptions::default()
     };
     assert_eq!(
-        quantise_lossy(&input, strict),
+        quantise_lossy(&input, strict).map(|e| e.adjustments),
         Err(EncodeError::QualityNotReached(ImageFormat::Png))
     );
 }
@@ -142,7 +143,8 @@ fn lossy_reduces_sixteen_bit_sources_to_eight_bit_palette() {
     }));
     let input = decoded(&png_bytes(&deep));
     let output = quantise_lossy(&input, LossyOptions::default())
-        .unwrap_or_else(|error| unreachable!("{error:?}"));
+        .unwrap_or_else(|error| unreachable!("{error:?}"))
+        .bytes;
     assert_eq!(colour_type(&output), 3);
 }
 
@@ -153,7 +155,8 @@ fn lossy_carries_the_icc_profile() {
     let profile = b"synthetic-icc-profile-bytes".to_vec();
     input.icc_profile = Some(profile.clone());
     let output = quantise_lossy(&input, LossyOptions::default())
-        .unwrap_or_else(|error| unreachable!("{error:?}"));
+        .unwrap_or_else(|error| unreachable!("{error:?}"))
+        .bytes;
     assert_eq!(decoded(&output).icc_profile, Some(profile));
 }
 
