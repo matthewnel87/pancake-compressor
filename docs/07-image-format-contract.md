@@ -61,3 +61,18 @@
 | Website | optional resize to width, preserve aspect ratio, choose web format | user-visible format choice; no upscale |
 
 Define golden fixture pixel/visual acceptance before making claims of visual equivalence.
+
+## M1 implemented matrix (2026-10-15)
+
+What the engine actually does today, checked by `crates/pancake-core/tests/format_matrix.rs` on every CI platform. Inputs: PNG, JPEG, lossy WebP, lossless WebP, AVIF (still images only; animated inputs are refused at preflight).
+
+| Output mode | From PNG | From JPEG | From WebP | From AVIF | Transparency | Notes |
+|---|---|---|---|---|---|---|
+| PNG lossless (oxipng) | Yes, pixel-identical | Refused (`invalid-options`) | Refused | Refused | Kept exactly | Recompresses PNG bytes; not a converter |
+| PNG palette (imagequant) | Yes | Yes | Yes | Yes | Kept | May return `quality-not-reached` instead of banding |
+| JPEG (MozJPEG) | Yes | Yes (re-encode, lossy) | Yes | Yes | **Flattened onto matte (white) and reported** | Orientation applied, no EXIF written |
+| WebP lossy (libwebp) | Yes | Yes | Yes | Yes | Kept | |
+| WebP lossless (libwebp, exact) | Yes, pixel-identical | Yes (prior JPEG loss remains) | Yes | Yes | Kept exactly | |
+| AVIF (ravif) | Yes | Yes | Yes | Yes | Kept | Lossy only. Source ICC profile: refused unless loss allowed, then reported |
+
+**Metadata today:** ICC profiles are carried by PNG palette, JPEG and WebP outputs, and by PNG lossless (all chunks kept). EXIF/XMP are not written by converting encoders (orientation is applied to pixels instead). The full keep/strip policy is PNK-013.

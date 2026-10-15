@@ -110,3 +110,23 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | AVIF encode (ravif) | Implemented, tested | Decodes back at correct size; quality 30 smaller than 95; alpha kept; orientation applied |
 | AVIF and colour profiles | Tested | Source with ICC refused by default (`colour-profile-not-supported`); allowed loss reported as `colour_profile_dropped` |
 | Checks on macOS arm64 | Passed | 66 engine tests + 3 doctests; clippy clean; `cargo deny check` clean |
+
+## M1 format matrix and first benchmark — 2026-10-15
+
+| Area | Status | Evidence |
+|---|---|---|
+| Every input format → every output mode | Tested on macOS arm64 | `tests/format_matrix.rs`: 5 inputs × 6 output modes; table in docs/07 "M1 implemented matrix" |
+| Benchmark (opt-in) | Measured once, macOS arm64 only | `cargo test -p pancake-core --release --test benchmark -- --ignored --nocapture` on Apple M1 Pro, 16 GB, macOS 26.1 |
+
+Synthetic 4000×3000 input (gradients + grain + hard edges), PNG source 19,871,605 bytes. Times include re-decoding for verification. **Synthetic content: not a prediction of savings on real photos.**
+
+| Encoder (defaults) | Output bytes | % of PNG | Time |
+|---|---|---|---|
+| PNG lossless, effort 2 | 9,319,068 | 46.9% | 8.72 s |
+| PNG palette | 2,861,210 | 14.4% | 8.62 s |
+| JPEG q80 4:2:0 | 377,833 | 1.9% | 0.56 s |
+| WebP lossy q80 | 344,380 | 1.7% | 1.00 s |
+| WebP lossless | 7,865,000 | 39.6% | 7.86 s |
+| AVIF q70 speed 6, 1 thread | 51,645 | 0.3% | 6.98 s |
+
+Peak memory for the whole run: **1.01 GB** (`/usr/bin/time -l`). For M2 this means roughly 1 GB per concurrent 12 MP job until the extra pixel copies (orientation clone, RGBA conversions, verification decode) are reduced. **Windows and Intel numbers not measured yet.**

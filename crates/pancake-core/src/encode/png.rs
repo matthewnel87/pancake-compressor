@@ -82,6 +82,13 @@ pub fn optimise_lossless(
     if options.effort > 6 {
         return Err(EncodeError::InvalidOptions("PNG effort must be 0-6"));
     }
+    if decoded.info.format != F {
+        // oxipng recompresses PNG bytes; it cannot convert other formats.
+        // Use quantise_lossy, or a lossless WebP, for those.
+        return Err(EncodeError::InvalidOptions(
+            "lossless PNG recompression needs a PNG source",
+        ));
+    }
     let output = oxipng::optimize_from_memory(source, &lossless_settings(options.effort, decoded))
         .map_err(map_oxipng_error)?;
     verify(&output, decoded, Exactness::Identical)?;
