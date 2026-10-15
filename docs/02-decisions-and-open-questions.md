@@ -33,3 +33,16 @@ Decisions marked **provisional** require M0/M1 evidence; do not treat guesses as
 ## Change control
 
 For every new decision: create `ADR-NNN` entry with date, options considered, security/licensing consequence, tests, and reason. Do not silently change output semantics, permissions or supported OSes.
+
+## ADRs added during M0 (2026-10-15, Claude Code, branch `m0-bootstrap`)
+
+| ID | Decision | Options considered | Consequence / reason | Status |
+|---|---|---|---|---|
+| ADR-016 | Bundle identifier `io.github.matthewnel87.pancakecompressor` | `io.github.<maintainer>` placeholder; a custom domain | Uses the maintainer's GitHub Pages namespace, which the maintainer controls. Changing it after release breaks macOS preferences and Windows upgrade paths, so confirm before the first public preview. | Provisional, maintainer to confirm |
+| ADR-017 | Pin Node 24 LTS in `.nvmrc` and Rust 1.99.1 in `rust-toolchain.toml`; CI reads Node from `.nvmrc` and installs Rust 1.99.1 explicitly | Keep CI on `node-version: '22'` and `rust-toolchain@stable` | Node 24 is the active LTS and is required by the current Vite 8 / ESLint 10 toolchain range; local development already ran on 24.15.0. Floating `stable` would make CI differ from local builds. Bump both deliberately in their own PRs. | Final for M0 |
+| ADR-018 | Light-mode `--accent` changed from `#AD6025` to `#A65B22` | Keep the proposal; use accent only for large text | `#AD6025` measured 4.48:1 on `--surface` (fails 4.5:1 for normal text). `#A65B22` measures 4.84:1, and white text on it 5.07:1. Visually near-identical. | Final |
+| ADR-019 | Stage installers in `release-artifacts/`, not `dist/` | Change Vite `outDir` instead | Vite builds the web front end into `dist/`, so CI would have uploaded web assets alongside the installer and `verify_staged.py` would always fail. Tauri's `frontendDist` keeps its default. | Final |
+| ADR-020 | Remove the scaffold's `opener` plugin; window capability limited to `core:app:default`, `core:event:default`, `core:window:default` | Keep `core:default` plus `opener:default` | The opener plugin can launch URLs and files, which M0 does not need (AGENTS.md rule 5). Narrow capability set reduces what a compromised webview could do. | Final for M0; revisit when the dialog plugin is added in M2 |
+| ADR-021 | Windows NSIS `installMode: currentUser`; macOS `minimumSystemVersion: 13.0` | Per-machine install (needs admin) | Per-user install avoids an admin prompt and matches docs/13. macOS 13 matches ADR-008. Both still need real install tests. | Provisional pending install tests |
+| ADR-022 | `pancake-core` forbids `unsafe` and denies `unwrap`/`expect`/`panic!` via crate lints; privacy flag enforced by a compile-time assertion | Rely on review only | Turns AGENTS.md rules 2 and 4 into build failures instead of review comments. | Final |
+| ADR-023 | Do not set `bundle.licenseFile` | Show the GPL as an installer/DMG licence page | With `licenseFile`, the DMG refused to open until the user clicked "Agree", and NSIS adds a licence page. The GPL does not require acceptance to run the program, so a click-through misrepresents it and adds friction. The licence ships in the source and stays declared via `bundle.license`. Third-party notices bundle is still required before release (docs/04). | Final |

@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Minimum permissions for the single main window. No fs, shell, http, opener or dialog access in M0. Any addition needs a security review (docs/10-threat-model.md).",
+  "windows": ["main"],
+  "permissions": [
+    "core:app:default",
+    "core:event:default",
+    "core:window:default"
+  ]
+}

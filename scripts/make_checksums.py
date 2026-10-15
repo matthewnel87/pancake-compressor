@@ -5,7 +5,7 @@ import hashlib
 import argparse
 
 ap=argparse.ArgumentParser()
-ap.add_argument('--directory', default='dist')
+ap.add_argument('--directory', default='release-artifacts')
 ap.add_argument('--expected', type=int, default=3)
 args=ap.parse_args()
 folder=Path(args.directory)

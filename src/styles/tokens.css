@@ -1,0 +1,64 @@
+/*
+ * Pancake Compressor design tokens (docs/22-brand-design-system-v3.md).
+ *
+ * Contrast record (WCAG 2.2 AA, measured 2026-10-15, see docs/IMPLEMENTATION-STATUS.md):
+ *   light ink/surface 14.54, muted/surface 6.15, accent/surface 4.84,
+ *         white on accent 5.07, success/surface 5.87, error/surface 6.51
+ *   dark  ink/surface 15.93, muted/surface 9.27, accent/surface 9.46,
+ *         surface on accent 9.46, success/surface 9.34, error/surface 8.37
+ * The proposed light accent #AD6025 measured 4.48 on surface (fails 4.5:1),
+ * so it was darkened to #A65B22 (ADR-018).
+ *
+ * `--butter` is for illustration only and must never carry text.
+ */
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #fff9ef;
+  --color-surface-raised: #ffffff;
+  --color-ink: #2c241f;
+  --color-ink-muted: #665d55;
+  --color-accent: #a65b22;
+  --color-on-accent: #ffffff;
+  --color-butter: #f8d27d;
+  --color-success: #206e53;
+  --color-error: #a43230;
+  --color-line: #e6dccd;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-dropzone: 20px;
+}
+
+/* Follow the operating system theme. A saved user override arrives in M3. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #1d1917;
+    --color-surface-raised: #282220;
+    --color-ink: #faf4e8;
+    --color-ink-muted: #c7bbb0;
+    --color-accent: #f1b369;
+    --color-on-accent: #1d1917;
+    --color-butter: #d3a44b;
+    --color-success: #70d0a4;
+    --color-error: #ff978f;
+    --color-line: #3d3430;
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: light dark;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  /* A visible focus ring on every interactive element (WCAG 2.4.7). */
+  :focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}

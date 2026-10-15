@@ -22,3 +22,25 @@ Add timestamped dated rows with PR/commit and CI run links, reproducible command
 ## v3 preparation update — 2026-10-15
 
 Documentation templates for downloader-first GitHub, dual coding agents, logo/design system, maintainable comments, public trust and feedback were added. **No GitHub settings, application source implementation, live logo design approval, release binaries, runtime security checks or installer smoke tests were performed by this documentation update.**
+
+## M0 local evidence — 2026-10-15 (Claude Code, branch `m0-bootstrap`, macOS 26.1 arm64)
+
+Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `rust-toolchain.toml`), Xcode at `/Applications/Xcode.app`, Tauri 2.12.4, create-tauri-app 4.8.0.
+
+| Area | Status | Evidence |
+|---|---|---|
+| Tauri v2 + React/TS/Vite scaffold, Rust workspace, `pancake-core` crate | Implemented | Official `create-tauri-app` react-ts template, merged and reduced (ADR-020) |
+| `get_app_info` IPC command | Implemented, unit-tested | `src-tauri/src/commands.rs`; 2 tests incl. camelCase contract |
+| Front-end checks | Passed locally | `npm run lint` (0 warnings), `npm run test` (3/3), `npm run build` (JS 222 kB / 69.7 kB gzip, CSS 11.8 kB) |
+| Rust checks | Passed locally | `cargo fmt --all -- --check`; `cargo clippy --workspace --all-targets --locked -- -D warnings`; `cargo test --workspace --locked` (8 unit/integration + 1 doctest) |
+| Contrast of colour tokens | Measured | All text pairs ≥ 4.5:1 after ADR-018; values recorded in `src/styles/tokens.css` |
+| macOS arm64 DMG | Built locally, **not install-tested on a clean machine** | `npm run tauri build -- --target aarch64-apple-darwin --bundles dmg` with `APPLE_SIGNING_IDENTITY=-`. DMG 1,902,351 bytes, SHA256 `b55ce1c54c22dc1f80b14f51916d01e2ce8f6574fe1c6ddfed376dceabc6f292` (local build, not a release). App 3.8 MB, arm64 only, `LSMinimumSystemVersion` 13.0 |
+| DMG behaviour | Checked | Mounts without a licence prompt (after ADR-023), contains app + Applications link |
+| Signature | Ad-hoc only | `codesign --verify --deep --strict` passes; `Signature=adhoc`, hardened runtime flag set. `spctl --assess` **rejects** it: Gatekeeper will block downloaded copies. Not notarised |
+| Launch smoke test (build machine, not clean OS) | Passed | Process started, main window 960×640 on screen within ~0.75 s of `open`, still running after 6 s at ~100 MB RSS. `lsof -i` showed 0 sockets for the app process. WebKit helper processes were **not** inspected, so this is not yet a full no-network proof |
+| Screenshot | Not captured | Terminal lacks macOS Screen Recording permission |
+| Windows x64 NSIS, macOS Intel DMG | **Not built** | Needs GitHub Actions run (blocked on push permission for workflow files) |
+| GitHub CI on 3 runners | **Not run** | Private repo `matthewnel87/pancake-compressor` created; push pending `workflow` token scope |
+| Dependency audits (`npm audit`, `cargo audit`), licence check | `npm install` reported 0 vulnerabilities; `cargo audit` and licence tree **not run** | CI `audit` job, and cargo-deny still to be added |
+
+**Gate M0 is not yet met**: it requires green Windows and macOS (Intel + ARM) CI bundles.

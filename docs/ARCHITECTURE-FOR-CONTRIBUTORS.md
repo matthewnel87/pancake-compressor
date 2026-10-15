@@ -1,6 +1,22 @@
 # How Pancake Compressor works — a developer tour
 
-> Architecture target; this handoff does not yet contain the implementation. Update the diagram and links to real source when Codex scaffolds code.
+> The diagram below is the **target** architecture. As of M0 only the shell exists; see "Where the code lives today" for what is real.
+
+## Where the code lives today (M0)
+
+| Path | What it does |
+|---|---|
+| `crates/pancake-core/src/lib.rs` | Engine crate root: version, privacy constant with a compile-time check, crate-wide lints (no `unsafe`, no `unwrap`/`panic!`). |
+| `crates/pancake-core/src/limits.rs` | Overflow-safe memory estimates for untrusted image dimensions. |
+| `src-tauri/src/lib.rs` | Builds the Tauri app and registers the only callable commands. |
+| `src-tauri/src/commands.rs` | `get_app_info`, the single M0 IPC command (read-only, no file access). |
+| `src-tauri/capabilities/main.json` | Built-in Tauri APIs the window may use (deliberately minimal). |
+| `src-tauri/tauri.conf.json` | Window, Content Security Policy and installer settings. |
+| `src/lib/ipc.ts` | Typed TypeScript mirror of the Rust commands. |
+| `src/App.tsx` | Launch screen. |
+| `src/styles/tokens.css` | Colour and spacing tokens, with the measured contrast record. |
+
+No decoding, encoding, file selection or batch code exists yet; those arrive in M1 and M2.
 
 ```text
 React / TypeScript interface

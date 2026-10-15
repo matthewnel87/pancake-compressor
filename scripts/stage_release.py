@@ -35,7 +35,7 @@ def main() -> int:
     if len(matches) != 1:
         print(f'ERROR: expected exactly 1 {bundle} {suffix}, got {len(matches)}:', matches, file=sys.stderr)
         return 1
-    out = Path('dist')
+    out = Path('release-artifacts')
     out.mkdir(exist_ok=True)
     dest = out / f'Pancake-Compressor_{args.version}_{output_suffix}'
     if dest.exists():

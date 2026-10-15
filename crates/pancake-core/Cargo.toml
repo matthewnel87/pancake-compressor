@@ -1,0 +1,18 @@
+[package]
+name = "pancake-core"
+description = "Offline image compression engine for Pancake Compressor (no GUI, no network)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"

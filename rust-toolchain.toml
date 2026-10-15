@@ -1,0 +1,6 @@
+# Pinned after the M0 build proof on macOS arm64 (see docs/IMPLEMENTATION-STATUS.md).
+# Bump deliberately in its own PR, never as a side effect of other work.
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

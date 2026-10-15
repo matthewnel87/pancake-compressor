@@ -4,7 +4,7 @@
 
 Free, open-source, offline desktop image compression and conversion for Windows and macOS. Designed for people preparing images for the web: drag, optimise, export. No subscriptions, accounts, trackers, paid tiers or software-imposed batch quotas.
 
-> **CURRENT STATUS — BUILD SPECIFICATIONS, NOT AN INSTALLABLE APPLICATION.** This repository starter contains comprehensive product/engineering/brand guidance and release-workflow templates. The desktop app and real Windows/macOS installers **have not yet been built or verified**. The download table below becomes active only after validated GitHub Releases exist.
+> **CURRENT STATUS — EARLY DEVELOPER SHELL (milestone M0). IT CANNOT COMPRESS IMAGES YET.** The desktop app opens a branded window and nothing more. There are no downloads, and no installer has been install-tested on Windows or macOS. See [`Implementation status`](docs/IMPLEMENTATION-STATUS.md) for exactly what has and has not been verified.
 
 ## Downloads — coming after verified builds
 
@@ -37,6 +37,18 @@ Read: [`Security overview`](docs/SECURITY-OVERVIEW.md) · [`Security policy`](SE
 We welcome people who simply want a faster workflow, not only developers. Read [`Reviews and feedback`](docs/REVIEW-AND-FEEDBACK.md). After repository setup, maintainers should **enable GitHub Discussions** for general comments and reviews; use [GitHub Issues](.github/ISSUE_TEMPLATE/) for reproducible bugs or concrete requests, and use GitHub's **private vulnerability reporting** for security concerns. Do not share private images or filesystem paths.
 
 ## Developers: build and improve it
+
+Requirements: Node 24 LTS (see `.nvmrc`), Rust 1.99.1 (installed automatically by `rustup` from `rust-toolchain.toml`) and the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS.
+
+```bash
+npm ci                      # install front-end dependencies from the lockfile
+npm run tauri dev           # run the desktop app with hot reload
+npm run lint && npm run test && npm run build
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
+```
+
 The codebase will be documented with source comments explaining non-obvious design choices, codec behaviour, resource limits and security assumptions, rather than commenting every trivial line. Start with [`Architecture for contributors`](docs/ARCHITECTURE-FOR-CONTRIBUTORS.md), [`CONTRIBUTING.md`](CONTRIBUTING.md), [`Code commenting`](docs/24-code-commenting-and-maintainer-guide.md), [`Milestones`](docs/17-codex-execution-plan.md) and [`Coding-agent instructions`](AGENTS.md).
 
 Both **Codex** (`AGENTS.md`) and **Claude Code** (`CLAUDE.md`) can use the same implementation specifications. The agent should first complete M0, build and test the shell, and never misrepresent untested components as working. See [`START-HERE.md`](START-HERE.md).

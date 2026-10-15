@@ -31,14 +31,17 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Node.js
+        with:
+          persist-credentials: false
+      - name: Set up Node.js (version pinned in .nvmrc)
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: .nvmrc
           cache: npm
-      - name: Set up Rust target
-        uses: dtolnay/rust-toolchain@stable
+      - name: Set up Rust (version pinned in rust-toolchain.toml) and target
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.99.1
           targets: ${{ matrix.target }}
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
@@ -47,7 +50,7 @@ jobs:
       - name: JS linter
         run: npm run lint
       - name: Frontend automated tests
-        run: npm run test -- --run
+        run: npm run test
       - name: TypeScript/production web build
         run: npm run build
       - name: Rust formatting
@@ -57,13 +60,17 @@ jobs:
       - name: Rust tests
         run: cargo test --workspace --locked
       - name: Build platform installer (not a manual install test)
+        env:
+          # macOS: ad-hoc signature for unsigned previews (docs/13). This does
+          # not satisfy Gatekeeper. Ignored on Windows.
+          APPLE_SIGNING_IDENTITY: '-'
         run: npm run tauri build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundle }}
       - name: Stage exactly one installer for evidence
         run: python scripts/stage_release.py --platform ${{ matrix.label }} --version ci
       - uses: actions/upload-artifact@v4
         with:
           name: ci-${{ matrix.label }}
-          path: dist/*
+          path: release-artifacts/*
           if-no-files-found: error
           retention-days: 7
   audit:
@@ -71,11 +78,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: .nvmrc
           cache: npm
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.99.1
       - run: npm ci
       - run: npm audit --audit-level=high
       - name: Install RustSec audit tool

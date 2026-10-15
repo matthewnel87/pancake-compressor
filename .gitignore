@@ -16,3 +16,8 @@ coverage/
 !.env.example
 _pancake/
 **/fixtures/private/
+
+# Staged installers and checksums (scripts/stage_release.py)
+release-artifacts/
+# Tauri-generated capability schemas
+src-tauri/gen/

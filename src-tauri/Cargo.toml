@@ -1,0 +1,29 @@
+[package]
+name = "pancake-compressor"
+description = "Pancake Compressor desktop shell (Tauri v2)"
+authors = ["Pancake Compressor contributors"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+# The `_lib` suffix keeps the library name distinct from the binary name,
+# which avoids a Cargo output collision on Windows
+# (https://github.com/rust-lang/cargo/issues/8519).
+name = "pancake_compressor_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# No HTTP, shell, fs, opener or updater plugins: see AGENTS.md rules 2 and 5
+# and ADR-014. Adding any plugin needs a security review and a dated ADR.
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+pancake-core = { path = "../crates/pancake-core" }
+
+[dev-dependencies]
+serde_json = "1"

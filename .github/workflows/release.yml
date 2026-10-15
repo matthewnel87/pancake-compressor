@@ -40,14 +40,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Node 22
+      - name: Node (version pinned in .nvmrc)
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version-file: .nvmrc
           cache: npm
-      - name: Rust stable and explicit target
-        uses: dtolnay/rust-toolchain@stable
+      - name: Rust (version pinned in rust-toolchain.toml) and explicit target
+        uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: 1.99.1
           targets: ${{ matrix.target }}
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
@@ -71,12 +72,12 @@ jobs:
       - name: GitHub release artifact attestation (real installer bytes)
         uses: actions/attest@v4
         with:
-          subject-path: 'dist/*'
+          subject-path: 'release-artifacts/*'
       - name: Upload exact attested file
         uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.label }}
-          path: dist/*
+          path: release-artifacts/*
           if-no-files-found: error
           retention-days: 14
   release-draft:
@@ -94,16 +95,16 @@ jobs:
         with:
           pattern: installer-*
           merge-multiple: true
-          path: dist
+          path: release-artifacts
       - name: Verify package set and produce checksum list
-        run: python scripts/make_checksums.py --directory dist --expected 3
+        run: python scripts/make_checksums.py --directory release-artifacts --expected 3
       - name: Publish **draft prerelease only**
         uses: softprops/action-gh-release@v3
         with:
           draft: true
           prerelease: true
           generate_release_notes: true
-          files: dist/*
+          files: release-artifacts/*
           fail_on_unmatched_files: true
       # MANUAL GATE: DO NOT AUTO-PUBLISH. Real OS smoke tests and signatures
       # must be recorded before a human publishes this draft.

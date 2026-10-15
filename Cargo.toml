@@ -1,0 +1,25 @@
+# Root Cargo workspace.
+#
+# `crates/pancake-core` holds all image logic and must stay testable without a
+# GUI. `src-tauri` is the thin desktop shell that exposes narrow commands to the
+# web front end. Release profile settings live here because Cargo ignores
+# profiles declared in member crates.
+[workspace]
+resolver = "3"
+members = ["crates/pancake-core", "src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/matthewnel87/pancake-compressor"
+rust-version = "1.99"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+# Abort keeps the binary small. Untrusted input must never reach a panic:
+# core code returns errors instead (see AGENTS.md rule 4).
+panic = "abort"
+strip = true
