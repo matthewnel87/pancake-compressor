@@ -77,3 +77,19 @@ Overall percent = `terminal_count / total_count * 100` after scan; individual fi
 ## Tauri security boundary
 
 No dynamic remote navigation, no wildcard capability, no generic `shell:allow-execute`, no unrestricted fs plugin. Only needed core IPC and dialogue permissions, with security review of any new plugin. Validate all IPC inputs on Rust side. Webview compromise should not grant arbitrary disk read/write; see threat model.
+
+## Implemented IPC contract (M2, 2026-10-15)
+
+Rust source of truth: `src-tauri/src/batch.rs`; TypeScript mirror: `src/lib/ipc.ts`; UI reducer: `src/lib/batchProgress.ts`.
+
+| Command | Input | Output |
+|---|---|---|
+| `select_inputs` | `kind: "files" \| "folders"` | `InputSelection \| null` (native dialog in Rust; token + label + counts) |
+| `select_output_folder` | — | `OutputSelection \| null` |
+| `start_batch` | `BatchOptions` (tokens + enum options; unknown fields rejected) | batch id |
+| `cancel_batch` | batch id | — |
+| `get_batch_snapshot` | batch id | `BatchSnapshot` |
+
+Events: `batch-event` (`BatchEvent`, schema version 1, strictly increasing `sequence`, relative `file` name, `state`, stable `code`, sizes, `notices`, `processed`/`total`) and `batch-finished` (`BatchSnapshot`). The UI drops events whose `sequence` is not newer than the last applied one, and a final state is never undone.
+
+Not yet: drag-and-drop registration (M3), event throttling (measure first), previews (`request_preview`, M3).

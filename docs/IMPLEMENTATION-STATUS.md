@@ -164,3 +164,12 @@ Peak memory for the whole run: **1.01 GB** (`/usr/bin/time -l`). For M2 this mea
 | Batch engine | Implemented, tested | Mixed batch (2 images, text, GIF, damaged PNG, APNG) → exact codes and counts; 500 nested files reconcile with mirrored output paths; originals byte-identical; existing outputs kept; cancel before start → 0 files written; cancel mid-batch → finished outputs complete, no temporaries, counts reconcile; memory-budget skip before decoding; peak concurrency ≤ worker count; unusable output folder fails every file cleanly |
 | Not done in M2 yet | | Tauri commands, native file/folder pickers, event bridge to the UI, batch snapshot for reconnect, disk-full simulation, Windows case-collision test, huge-dimension PNG test in the batch corpus |
 | Checks on macOS arm64 | Passed | 105 unit + matrix + 3 metadata + 2 API tests + 4 doctests; clippy clean; `cargo deny check` clean |
+
+## M2 desktop bridge — 2026-10-15 (same branch)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Rust-side native pickers + token registry | Implemented; logic tested, **dialogs not exercised by automated tests** (need a window) | `src-tauri/src/batch/tests.rs` (4 tests): opaque tokens, default `_pancake` output, options validation incl. rejected unknown fields/values, events without full paths |
+| Batch start/cancel/snapshot commands | Implemented, **not yet run end-to-end in the app** | Needs the M3 UI to drive them; engine itself covered by core tests |
+| TS contract + progress reducer | Implemented, tested | `npm run test`: 7 tests incl. late/duplicate/foreign events ignored and final states never undone |
+| Webview permissions | Unchanged | No dialog/fs permission granted to the webview |

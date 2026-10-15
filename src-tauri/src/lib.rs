@@ -4,10 +4,12 @@
 //! The front end is treated as untrusted: it can only call the commands
 //! registered in [`run`], and each command validates its own input in Rust.
 //!
-//! As of M0 there is a single read-only command, [`commands::get_app_info`],
-//! which needs no file or network permission. File registration, batches and
-//! cancellation are added in M2 following `docs/03-architecture-and-ipc.md`.
+//! Commands: [`commands::get_app_info`] (read-only) and the batch bridge in
+//! [`batch`]: native pickers opened from Rust, token-based batch start,
+//! cancellation and snapshots (`docs/03-architecture-and-ipc.md`). The web UI
+//! never passes a file path that Rust trusts.
 
+pub mod batch;
 pub mod commands;
 
 /// Builds and runs the Tauri application.
@@ -18,7 +20,17 @@ pub mod commands;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let result = tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![commands::get_app_info])
+        // Used from Rust only: the webview gets no dialog permission.
+        .plugin(tauri_plugin_dialog::init())
+        .manage(batch::AppState::default())
+        .invoke_handler(tauri::generate_handler![
+            commands::get_app_info,
+            batch::select_inputs,
+            batch::select_output_folder,
+            batch::start_batch,
+            batch::cancel_batch,
+            batch::get_batch_snapshot,
+        ])
         .run(tauri::generate_context!());
 
     if let Err(error) = result {

@@ -22,10 +22,12 @@
 | `crates/pancake-core/src/encode/webp.rs` | Still WebP via libwebp, lossy or lossless (exact), keeps alpha; embeds ICC with a small RIFF edit (ADR-032). |
 | `crates/pancake-core/src/encode/avif.rs` | Still AVIF via ravif, lossy only, keeps alpha; refuses to drop an ICC profile unless explicitly allowed (ADR-033). |
 | `src-tauri/src/lib.rs` | Builds the Tauri app and registers the only callable commands. |
-| `src-tauri/src/commands.rs` | `get_app_info`, the single M0 IPC command (read-only, no file access). |
+| `src-tauri/src/commands.rs` | `get_app_info` (read-only, no file access). |
+| `src-tauri/src/batch.rs` | UI bridge: native pickers opened in Rust, token registry, batch start/cancel/snapshot, event conversion (ADR-039). |
 | `src-tauri/capabilities/main.json` | Built-in Tauri APIs the window may use (deliberately minimal). |
 | `src-tauri/tauri.conf.json` | Window, Content Security Policy and installer settings. |
-| `src/lib/ipc.ts` | Typed TypeScript mirror of the Rust commands. |
+| `src/lib/ipc.ts` | Typed TypeScript mirror of the Rust commands and events. |
+| `src/lib/batchProgress.ts` | Pure reducer applying batch events in sequence order (drops late/duplicate events). |
 | `src/App.tsx` | Launch screen. |
 | `src/styles/tokens.css` | Colour and spacing tokens, with the measured contrast record. |
 
