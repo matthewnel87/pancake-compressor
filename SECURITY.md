@@ -1,41 +1,39 @@
-# Security Policy — Pancake Compressor
+# Security policy
 
-> **Pre-release specification.** Controls are planned until implemented, tested and linked to a release. Do not present this document as evidence that an as-yet-unbuilt binary is safe.
+Pancake Compressor opens images that may come from anywhere, so security is a core feature, not an add-on. Plain-language summary: [docs/SECURITY-OVERVIEW.md](docs/SECURITY-OVERVIEW.md).
 
 ## Supported versions
 
-A version becomes supported only after public release. Keep the most recent stable release supported, document critical-fix policy in release notes, and never promise SLA response times without a maintained team.
+The project is in **technical preview**. Only the latest release receives security fixes. When stable releases begin, this table will list which versions are supported.
+
+| Version | Supported |
+|---|---|
+| Latest preview | Yes |
+| Older previews | No: please update |
 
 ## Reporting a vulnerability
 
-Use GitHub **Private Vulnerability Reporting** once enabled in the public repository: Security → Advisories → Report a vulnerability. Do **not** post exploit payloads, private image files or undisclosed security weaknesses as public issues. Before enabling that feature, document a maintainer-controlled security contact without publishing private addresses in generated files. Acknowledge reports when practicable, triage impact, coordinate fixes and publish advisories for confirmed issues.
+**Please report privately**, using GitHub's **Security → Advisories → Report a vulnerability** page for this repository. Do not open a public issue, and do not post exploit files, private images or personal paths publicly.
 
-## Threat model summary
+This is a volunteer, open-source project, so we cannot promise fixed response times. We will acknowledge reports as soon as we can, work with you on a fix, credit you if you wish, and publish an advisory for confirmed issues.
 
-Untrusted image payloads can target codecs or cause decompression bombs; crafted paths can overwrite/unintentionally expose files; UI compromise could invoke commands; supply-chain compromise can alter code, dependencies or release artifacts. Primary mitigations: validation, memory budgets, bounded concurrency, path confinement, non-destructive outputs, narrowly scoped IPC, dependency pinning and audits, CI provenance and installer signing where available. See `docs/10-threat-model.md`.
+Especially welcome: crafted image files that crash the app, use excessive memory or time, or escape the selected or output folders; ways the web interface could reach files or commands it should not; problems in the release or build pipeline.
 
-## Privacy promise
+## How the app is protected
 
-**Files remain on-device.** No runtime network endpoints, analytics, background uploads, embedded remote content or updater in the MVP. We do not claim an OS's own diagnostics/security checks are controlled by the app. See `PRIVACY.md`.
+- Images are treated as hostile: content-based format detection, size and memory limits before decoding, refusal of animated and unsupported formats, and tests against damaged and malicious files ([evidence](docs/IMPLEMENTATION-STATUS.md)).
+- Files are never overwritten, outputs are written atomically, and folders are walked without following links.
+- The interface has no file-system, shell or network permission; file access happens only in Rust code, behind tokens.
+- No network code, analytics or updater. The engine fails to compile if network access is enabled.
+- Locked dependency versions, `cargo deny` and `npm audit` on every pull request, and Dependabot updates.
+- Threat model: [docs/10-threat-model.md](docs/10-threat-model.md).
 
 ## Verifying downloads
 
-Publish SHA-256 digest(s) and GitHub-generated build provenance for **each** release binary, together with the exact public commit/tag and OS-specific signing status. Example only, after repository exists:
+Releases are built by GitHub Actions from this repository, with SHA-256 checksums and GitHub build attestations. Step-by-step instructions: [docs/VERIFY-DOWNLOAD.md](docs/VERIFY-DOWNLOAD.md). Download only from this repository's Releases page, not from mirrors.
 
-```bash
-# macOS — locally compute and compare against published SHA256SUMS.txt
-shasum -a 256 Pancake-Compressor-*.dmg
-# With GitHub CLI and the actual public repository path:
-gh attestation verify ./Pancake-Compressor-<version>-<platform>.dmg --repo OWNER/pancake-compressor
-```
+These checks prove what was built and from which source. They do not prove the absence of bugs.
 
-```powershell
-# Windows PowerShell
-Get-FileHash .\Pancake-Compressor-Setup.exe -Algorithm SHA256
-```
+## Signing
 
-Hash matches prove bytes match the published checksum; signatures tie artifacts to signing identities; attestations tie them to specific workflows/source. **None alone certifies the program is vulnerability-free.** Always install only from the canonical GitHub Releases page, not mirrors.
-
-## Release signing policy
-
-See `docs/14-signing-and-provenance.md`. Do not mark unsigned preview builds as signed. For Windows, investigate SignPath Foundation eligibility after a maintained public release; for macOS, conventional Developer ID signing and notarisation need a paid Apple Developer Program membership. Store signing secrets only in protected GitHub environments.
+Current previews are **not** signed with an Apple Developer ID or a Windows code-signing certificate, and are labelled as such. macOS notarisation needs a paid Apple Developer Program membership; Windows signing may be available free to open-source projects through the SignPath Foundation once the project is public. We will never describe an unsigned build as signed. See [docs/14-signing-and-provenance.md](docs/14-signing-and-provenance.md).

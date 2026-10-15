@@ -1,6 +1,6 @@
 # Frequently asked questions
 
-**Is it free?** Yes, the project is intended to be fully free/open source and contain no premium features, accounts, subscriptions or usage quota. No application binaries are available from this handoff yet.
+**Is it free?** Yes, completely and permanently: no premium features, accounts, subscriptions or usage limits. It is open source under GPL-3.0-or-later. See [our promise](../PROMISE.md). Technical previews are published on the Releases page.
 
 **Does it upload my photos?** The intended installed app processes them on your machine without uploading to a server. This must be verified and documented for each release.
 

@@ -1,9 +1,23 @@
-# Privacy — Pancake Compressor
+# Privacy
 
-**Local-only by design.** Pancake Compressor processes user-selected images on the same computer. The MVP has no app accounts, cloud processing, analytics, crash upload, advertising, tracking identifiers, or networking requirement. The app may keep local preference settings and short-lived image previews; document their paths and offer cleanup. The user selects export destinations and originals are never modified by default.
+**Short version: Pancake Compressor does not collect anything. Your images never leave your computer.**
 
-Scope note: operating systems and third-party download infrastructure may independently conduct security, update or diagnostic checks. This statement covers **the application** and not the user's entire computer. Verify the no-network assertion with source review, dependency audit, and an offline/firewall test on both platforms before each release. Do not claim a feature is implemented until it is verified.
+## What the app does with your data
 
-## Image and metadata handling
+- **Images:** read from the files and folders you choose, processed in memory on your computer, and written to the output folder you choose (by default a `_pancake` folder next to them). Originals are never changed.
+- **Previews:** small before/after previews are made in memory when you press Compare and are not saved to disk.
+- **Settings:** your light/dark theme choice is saved in the app's local storage on your computer. Nothing else is saved between sessions.
+- **Network:** none. The app has no network code, no analytics, no crash reporting, no update checker and no account. It works the same with your internet switched off.
+- **Logs:** the app does not write logs containing your file names, paths or image content.
 
-Default behaviour and limitations must match `docs/07-image-format-contract.md`. Display when EXIF/ICC/XMP/location metadata will be kept or removed, and explain when conversion cannot preserve something. Any future crash diagnostics or update checks require a new privacy decision and clear user control.
+## Image metadata
+
+Photos can contain hidden information such as the camera model, date, copyright and **GPS location**. By default the app **keeps** this information in the compressed copies where the format allows, because silently deleting it can lose things people care about (such as copyright). When it cannot be kept, the app tells you. An option to **remove metadata, including location**, before sharing is planned.
+
+## Outside the app
+
+Your operating system, antivirus and GitHub (when you download) have their own privacy practices. This statement covers the Pancake Compressor app itself.
+
+## Changes
+
+Any future feature that touches privacy (for example an optional update check) would be off by default, clearly explained, and recorded here and in the [decision log](docs/02-decisions-and-open-questions.md) first.

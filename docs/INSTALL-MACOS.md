@@ -1,12 +1,19 @@
 # Install on macOS
 
-> No installer is included in this handoff. Release documents must specify actual signing/notarisation and tested OS support before publication.
+Works on macOS 13 (Ventura) and later.
 
-1. Determine whether the Mac is **Apple Silicon** (M-series) or **Intel** using Apple menu → About This Mac.
-2. From the official public GitHub **Releases** page, download the matching **ARM64** or **x86_64** `.dmg` asset, not the GitHub source archive.
-3. Check release identity: version, hash, attestation, Developer ID signing and Apple notarisation status. Developer ID signing/notarisation requires a separate provisioning process; it is not automatically conferred by GitHub builds.
-4. Open the DMG, drag the app to Applications if the installer instructs that, and open it. **Never disable Gatekeeper globally.** If Gatekeeper refuses to launch an unsigned preview, a notarised release is the recommended route for ordinary users.
-5. Test an image with networking disconnected. Confirm the `_pancake` output folder and that the original remains unchanged.
-6. Report issues via Issues with macOS version, Intel/ARM chip type and a reproducible non-private sample where possible.
+1. **Check your chip:** Apple menu → **About This Mac**. "Chip: Apple M…" means Apple silicon; "Processor: Intel" means Intel.
+2. **Download** from [Releases](../../../releases):
+   - Apple silicon: `Pancake-Compressor_<version>_macos_arm64.dmg`
+   - Intel: `Pancake-Compressor_<version>_macos_x64.dmg`
+3. *(Optional)* [Verify the download](VERIFY-DOWNLOAD.md).
+4. **Open the .dmg** and drag **Pancake Compressor** onto **Applications**. Eject the disk image.
+5. **First launch.** The current previews are **not notarised by Apple**, so macOS will block the first open with a message about an unidentified developer. To allow just this app:
+   - Open **System Settings → Privacy & Security**, scroll to the message about Pancake Compressor, and click **Open Anyway**. Then confirm.
+   - This allows this one app only. **Never** turn off Gatekeeper for your whole Mac.
+   - If you are not comfortable doing this, please wait for a notarised release.
+6. **Try it:** drag a few images onto the window and press **Compress images**. Your results appear in a `_pancake` folder next to them; the originals are unchanged.
 
-Maintainer gate: clean-install and basic compression/uninstall tests on **both** Mac architectures before presenting the release as supported. The existence of a DMG does not establish it can launch on consumers' machines.
+To remove the app, drag it from Applications to the Bin. Your compressed images are not deleted.
+
+**Problems?** Tell us in [Issues](../../../issues) with your macOS version and chip type. Please do not attach private photos.

@@ -1,44 +1,62 @@
-# Pancake Compressor
+# 🥞 Pancake Compressor
 
 **Squash file sizes, not image quality.**
 
-Free, open-source, offline desktop image compression and conversion for Windows and macOS. Designed for people preparing images for the web: drag, optimise, export. No subscriptions, accounts, trackers, paid tiers or software-imposed batch quotas.
+A free, open-source desktop app for Windows and macOS that compresses and converts images for fast websites. Drop in a folder, press one button, get smaller PNG, JPEG, WebP or AVIF files. Everything happens on your own computer: no uploads, no account, no tracking, no limits, no paid tier. Ever.
 
-> **CURRENT STATUS — EARLY DEVELOPER SHELL (milestone M0). IT CANNOT COMPRESS IMAGES YET.** The desktop app opens a branded window and nothing more. There are no downloads, and no installer has been install-tested on Windows or macOS. See [`Implementation status`](docs/IMPLEMENTATION-STATUS.md) for exactly what has and has not been verified.
+> **Status: early technical preview.** The app works end to end on our test machines, but it is **not yet code-signed**, has **not yet been install-tested on Windows by a person**, and some features are still being finished. Read [what is verified](docs/IMPLEMENTATION-STATUS.md) before relying on it. Feedback is very welcome.
 
-## Downloads — coming after verified builds
+## Download
 
-| Platform | Planned official asset | Status |
-|---|---|---|
-| Windows 11 x64 | NSIS `.exe` offline installer | **Not available yet** |
-| macOS Apple Silicon | ARM64 `.dmg` | **Not available yet** |
-| macOS Intel | x86_64 `.dmg` | **Not available yet** |
+Get the latest version from **[Releases](../../releases)**. Pick the file for your computer:
 
-Once releases exist, the maintainer will replace this section with **verified GitHub Release asset links**, release SHA-256 and attestation guidance, and actual code-signing/notarisation status. **Downloading GitHub's source archive is not the same as installing the app.**
+| Your computer | Download |
+|---|---|
+| Windows 11 (64-bit) | `Pancake-Compressor_<version>_windows_x64-setup.exe` |
+| Mac with Apple chip (M1, M2, M3, M4…) | `Pancake-Compressor_<version>_macos_arm64.dmg` |
+| Mac with Intel chip | `Pancake-Compressor_<version>_macos_x64.dmg` |
 
-## What we're building
-- **Smart Auto** compression without codec expertise.
-- Still **PNG, JPEG, WebP and AVIF** optimisation and conversion, subject to tested format support.
-- **Unlimited batches without paywalls** — subject to device memory/storage safety limits.
-- Native drag-and-drop and folder import; keep nesting and protect original images.
-- Clear file-by-file results, real batch progress, useful error messages and an original pancake animation that respects reduced-motion settings.
-- Warm, stylish, light/dark desktop UI that remains quick during CPU-heavy work.
-- Local-only processing and no account or image-upload service.
+Not sure which Mac you have? Apple menu → **About This Mac** → look for "Chip" (Apple) or "Processor" (Intel).
 
-## See what it will look like
-Design and animation instructions are in [`docs/22-brand-design-system-v3.md`](docs/22-brand-design-system-v3.md), [`docs/23-ui-ux-flows-performance-v3.md`](docs/23-ui-ux-flows-performance-v3.md) and [`docs/27-logo-and-brand-asset-production.md`](docs/27-logo-and-brand-asset-production.md). Real screenshots will be posted **after** native UI has been implemented and reviewed; no concept image is represented as a screenshot of shipped software.
+The green **Code** button downloads the source code, not the app.
 
-## Privacy, trust and safe installation
-Pancake Compressor is designed to process all image data locally, never deleting originals by default. The source and CI will be auditable, and each release will disclose real test and signing evidence.
+Installation help: [Windows](docs/INSTALL-WINDOWS.md) · [macOS](docs/INSTALL-MACOS.md)
 
-Read: [`Security overview`](docs/SECURITY-OVERVIEW.md) · [`Security policy`](SECURITY.md) · [`Privacy`](PRIVACY.md) · [`Windows installation`](docs/INSTALL-WINDOWS.md) · [`Mac installation`](docs/INSTALL-MACOS.md) · [`Implementation status`](docs/IMPLEMENTATION-STATUS.md).
+## Why you can trust it
 
-## Review it, ask questions, suggest improvements
-We welcome people who simply want a faster workflow, not only developers. Read [`Reviews and feedback`](docs/REVIEW-AND-FEEDBACK.md). After repository setup, maintainers should **enable GitHub Discussions** for general comments and reviews; use [GitHub Issues](.github/ISSUE_TEMPLATE/) for reproducible bugs or concrete requests, and use GitHub's **private vulnerability reporting** for security concerns. Do not share private images or filesystem paths.
+We would rather earn trust with evidence than ask for it. In short:
 
-## Developers: build and improve it
+- **Open source.** Every line is public under GPL-3.0-or-later. Anyone can read, audit or rebuild it.
+- **Built by GitHub, not on someone's laptop.** Release files are built by GitHub Actions from the public source, and each one has a **SHA-256 checksum** and a **GitHub build attestation** you can check yourself. [How to verify your download](docs/VERIFY-DOWNLOAD.md).
+- **Offline by design.** The app contains no network code, analytics or update checker. The engine has a compile-time check that fails the build if that ever changes.
+- **Your originals are never touched.** Results go to a separate `_pancake` folder and never overwrite anything.
+- **Hostile files are expected.** Every image is checked before it is opened, with limits on size and memory, and the code is tested against damaged and malicious files.
+- **Honest about what is not done yet.** The app is not yet signed with an Apple or Microsoft certificate, so your computer will warn you the first time. We explain exactly what that means and never ask you to switch off your system's protections.
 
-Requirements: Node 24 LTS (see `.nvmrc`), Rust 1.99.1 (installed automatically by `rustup` from `rust-toolchain.toml`) the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS, and on **Windows and Intel Macs** [NASM](https://www.nasm.us/) 2.14 or later on your `PATH` (used to build the AVIF decoder; not needed on Apple Silicon).
+Full details: [Security overview](docs/SECURITY-OVERVIEW.md) · [Privacy](PRIVACY.md) · [Security policy](SECURITY.md) · [What is verified](docs/IMPLEMENTATION-STATUS.md)
+
+## What it does
+
+- **Smart Auto:** picks the smallest suitable format per image, with rule-based choices you can see. Transparent images never get turned into JPEG.
+- **PNG, JPEG, WebP and AVIF** in and out, using leading open-source encoders: MozJPEG, oxipng, imagequant (pngquant), libwebp and rav1e.
+- **Never larger:** if a file cannot be made smaller, the original is kept and you are told.
+- **Whole folders at once,** keeping subfolders, with real progress and honest results.
+- **Before/after compare,** so you can check quality yourself.
+- **Keeps what matters:** colour profiles, camera details and copyright info are kept where the format allows, and you are told when something cannot be kept.
+
+## Help make it the best
+
+This project has one goal: **the best free, lightweight image compression and conversion app for fast websites ever made.** It is free and open source, and it always will be. That is our [promise](PROMISE.md).
+
+You are invited, whoever you are:
+
+- **Try it and tell us what you think:** [Discussions](../../discussions) for ideas and reviews, [Issues](../../issues) for bugs.
+- **Improve it:** code, design, accessibility, testing, translations and documentation are all welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Build on it:** fork it, remix it or take the idea further. The GPL licence means you can, as long as what you share stays free and open source too.
+
+## For developers
+
+Requirements: Node 24 LTS (see `.nvmrc`), Rust 1.99.1 (installed automatically by `rustup` from `rust-toolchain.toml`), the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS, and on **Windows and Intel Macs** [NASM](https://www.nasm.us/) 2.14 or later on your `PATH` (used to build the AV1 codecs; not needed on Apple Silicon).
 
 ```bash
 npm ci                      # install front-end dependencies from the lockfile
@@ -47,10 +65,11 @@ npm run lint && npm run test && npm run build
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
+cargo deny check            # licences, advisories, sources
 ```
 
-The codebase will be documented with source comments explaining non-obvious design choices, codec behaviour, resource limits and security assumptions, rather than commenting every trivial line. Start with [`Architecture for contributors`](docs/ARCHITECTURE-FOR-CONTRIBUTORS.md), [`CONTRIBUTING.md`](CONTRIBUTING.md), [`Code commenting`](docs/24-code-commenting-and-maintainer-guide.md), [`Milestones`](docs/17-codex-execution-plan.md) and [`Coding-agent instructions`](AGENTS.md).
+Start with the [architecture tour](docs/ARCHITECTURE-FOR-CONTRIBUTORS.md). Coding agents follow [AGENTS.md](AGENTS.md).
 
-Both **Codex** (`AGENTS.md`) and **Claude Code** (`CLAUDE.md`) can use the same implementation specifications. The agent should first complete M0, build and test the shell, and never misrepresent untested components as working. See [`START-HERE.md`](START-HERE.md).
+## Licence
 
-**Licence:** GPL-3.0-or-later is the intended licensing model because of proposed `imagequant` use; verify the complete dependency licence tree before distribution. See [`LICENSE`](LICENSE) and dependency guidance.
+[GPL-3.0-or-later](LICENSE). Third-party components and their licences are listed in [NOTICES.md](NOTICES.md).
