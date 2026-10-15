@@ -57,7 +57,7 @@ fn encoder_size_and_time() {
     );
     println!("decode png: {:.2}s", started.elapsed().as_secs_f64());
 
-    let mut report = |name: &str, run: &mut dyn FnMut() -> Vec<u8>| {
+    let report = |name: &str, run: &mut dyn FnMut() -> Vec<u8>| {
         let started = Instant::now();
         let bytes = run();
         println!(
