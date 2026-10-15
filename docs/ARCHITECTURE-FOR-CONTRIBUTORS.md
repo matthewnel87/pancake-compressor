@@ -7,7 +7,8 @@
 | Path | What it does |
 |---|---|
 | `crates/pancake-core/src/lib.rs` | Engine crate root: version, privacy constant with a compile-time check, crate-wide lints (no `unsafe`, no `unwrap`/`panic!`). |
-| `crates/pancake-core/src/limits.rs` | Overflow-safe memory estimates for untrusted image dimensions. |
+| `crates/pancake-core/src/limits.rs` | Overflow-safe memory estimates and the pre-decode pixel caps (`ImageLimits`, ADR-024). |
+| `crates/pancake-core/src/format.rs` | Header-only identification: magic bytes, declared dimensions, alpha hint, animation refusal (ADR-025) and `preflight`, which every file must pass before decoding. Tests and synthetic fixture builders are in `format/tests.rs`. |
 | `src-tauri/src/lib.rs` | Builds the Tauri app and registers the only callable commands. |
 | `src-tauri/src/commands.rs` | `get_app_info`, the single M0 IPC command (read-only, no file access). |
 | `src-tauri/capabilities/main.json` | Built-in Tauri APIs the window may use (deliberately minimal). |
@@ -16,7 +17,7 @@
 | `src/App.tsx` | Launch screen. |
 | `src/styles/tokens.css` | Colour and spacing tokens, with the measured contrast record. |
 
-No decoding, encoding, file selection or batch code exists yet; those arrive in M1 and M2.
+No decoding, encoding, file selection or batch code exists yet. Header inspection is the first M1 step; codecs follow.
 
 ```text
 React / TypeScript interface

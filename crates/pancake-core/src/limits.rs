@@ -10,6 +10,44 @@
 //! (based on available memory and parallel jobs) is M2 work, described in
 //! `docs/08-batching-output-and-memory.md`.
 
+/// Hard caps applied to every image before decoding.
+///
+/// These are a safety net against hostile or absurd files, not the per-batch
+/// memory budget (that is M2 scheduling work). An image within these caps can
+/// still be refused later if the machine lacks memory for it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ImageLimits {
+    /// Largest accepted width or height in pixels.
+    pub max_side: u32,
+    /// Largest accepted `width * height`.
+    pub max_pixels: u64,
+}
+
+impl ImageLimits {
+    /// Defaults chosen in ADR-024 (provisional until M2 memory benchmarks):
+    /// 65,535 px per side covers the JPEG maximum and very wide panoramas;
+    /// 2^28 pixels (about 268 megapixels, 1 GiB as RGBA8) is far beyond any
+    /// camera photo while keeping a single decode within reach of an 8 GB
+    /// machine.
+    pub const DEFAULT: ImageLimits = ImageLimits {
+        max_side: 65_535,
+        max_pixels: 1 << 28,
+    };
+
+    /// Returns `true` if the declared dimensions are within both caps.
+    pub fn allows(&self, width: u32, height: u32) -> bool {
+        width <= self.max_side
+            && height <= self.max_side
+            && u64::from(width) * u64::from(height) <= self.max_pixels
+    }
+}
+
+impl Default for ImageLimits {
+    fn default() -> Self {
+        Self::DEFAULT
+    }
+}
+
 /// Bytes per pixel for 8-bit RGBA, the widest layout the engine plans to hold
 /// in memory for still images in v0.1.
 pub const RGBA8_BYTES_PER_PIXEL: u64 = 4;
@@ -43,6 +81,16 @@ pub fn fits_memory_budget(width: u32, height: u32, budget_bytes: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn default_limits_accept_real_photos_and_refuse_bombs() {
+        let limits = ImageLimits::default();
+        assert!(limits.allows(8256, 5504)); // 45 MP full-frame camera
+        assert!(limits.allows(16_384, 16_384)); // exactly 2^28 pixels
+        assert!(!limits.allows(16_384, 16_385));
+        assert!(!limits.allows(65_536, 1)); // one side too long
+        assert!(!limits.allows(u32::MAX, u32::MAX));
+    }
 
     #[test]
     fn typical_photo_size_is_exact() {

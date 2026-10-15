@@ -45,3 +45,15 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | Dependency audits (`npm audit`, `cargo audit`), licence check | `npm install` reported 0 vulnerabilities; `cargo audit` and licence tree **not run** | CI `audit` job, and cargo-deny still to be added |
 
 **Gate M0 is not yet met**: it requires green Windows and macOS (Intel + ARM) CI bundles.
+
+## M1 step 1: format sniffing and preflight — 2026-10-15 (branch `m1-format-sniffing`, stacked on `m0-bootstrap`)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Magic-byte detection (PNG, JPEG, WebP, AVIF) and named unsupported formats (GIF, BMP, TIFF, HEIF, JPEG XL, uncommon JPEG processes) | Implemented, unit-tested | `crates/pancake-core/src/format.rs`; `cargo test --workspace --locked` on macOS arm64: 22 engine tests + 3 doctests pass |
+| Header dimensions and alpha hint | Implemented, unit-tested | Synthetic header fixtures per format (`fixtures/README.md`) |
+| Animated input refusal (APNG, animated WebP, AVIF sequence) | Implemented, unit-tested | `animated_inputs_are_refused_not_flattened` |
+| Decompression-bomb refusal before decode | Implemented, unit-tested | `preflight_refuses_decompression_bombs_before_decoding` (ADR-024) |
+| Robustness against hostile headers | Tested, **not fuzzed** | Every truncation of every fixture and 20,000 seeded random inputs return without panic. Real fuzzing (cargo-fuzz) is M4 work |
+| Checked against real files from other encoders | **Not done** | Fixtures are hand-built headers; real encoder output is checked once codecs land |
+| Windows / macOS Intel runs of these tests | **Not run** | Will run in CI when this branch has a PR |
