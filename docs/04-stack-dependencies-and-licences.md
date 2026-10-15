@@ -77,3 +77,7 @@ The allow-list is enforced by `deny.toml` (`cargo deny check`) in the CI `audit`
 `mozjpeg` 0.10.13 (IJG) and `mozjpeg-sys` 2.2.3 (IJG AND Zlib AND BSD-3-Clause), default features: builds MozJPEG's C code with the platform compiler, plus SIMD assembly via NASM on x86 (NEON intrinsics on ARM, no extra tool). `IJG` was added to `deny.toml`.
 
 **Release obligation (IJG licence):** the documentation shipped with binaries must state *"This software is based in part on the work of the Independent JPEG Group."* This must be in the third-party notices before any release (tracked with the NOTICES/SBOM task in docs/04 and the release checklist).
+
+### M1 WebP encoding dependencies — 2026-10-15
+
+`webp` 0.3.1 (MIT OR Apache-2.0, default `img` feature off) and `libwebp-sys` 0.14.4 (MIT; builds Google's libwebp C sources, BSD-3-Clause, with the platform C compiler; no NASM). `cargo deny check` passes.

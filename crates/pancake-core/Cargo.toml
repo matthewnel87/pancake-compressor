@@ -19,6 +19,7 @@ imgref = "1.12"
 mozjpeg = "0.10.13"
 oxipng = { version = "10.2.1", default-features = false }
 png = "0.18"
+webp = { version = "0.3.1", default-features = false }
 
 [lints.rust]
 unsafe_code = "forbid"

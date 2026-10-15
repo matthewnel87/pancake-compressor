@@ -20,6 +20,7 @@ use crate::format::ImageFormat;
 
 pub mod jpeg;
 pub mod png;
+pub mod webp;
 
 /// Visible changes an encoder had to make, so the app can tell the user
 /// (docs/07: no silent transparency or orientation changes).

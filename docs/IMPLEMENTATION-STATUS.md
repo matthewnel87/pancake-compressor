@@ -102,3 +102,8 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | JPEG greyscale / 16-bit | Tested | Grey stays 1-channel; 16-bit reports `precision_reduced` |
 | Release panic strategy | Changed to unwind (ADR-030) | Required for MozJPEG error handling |
 | Checks on macOS arm64 | Passed | 54 engine tests + 3 doctests; clippy clean; `cargo deny check` clean (IJG allowed) |
+| WebP lossless (libwebp) | Implemented, tested | Pixel-identical incl. hidden RGB under transparent pixels |
+| WebP lossy | Implemented, tested | Decodes (now also covers **lossy WebP decoding**); smaller than lossless on a textured image; transparency kept |
+| WebP ICC | Tested | Survives simple lossy (VP8), simple lossless (VP8L) and extended (VP8X+ALPH) layouts, odd-length profile, RIFF size consistent |
+| Observation | Recorded | On a perfectly smooth synthetic gradient, lossless WebP was smaller than lossy. The M2 "avoid larger output" comparison must compare real outputs, not assume |
+| Checks on macOS arm64 | Passed | 61 engine tests + 3 doctests; clippy clean; `cargo deny check` clean |
