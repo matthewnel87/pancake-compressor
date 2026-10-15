@@ -23,7 +23,7 @@ Add timestamped dated rows with PR/commit and CI run links, reproducible command
 
 Documentation templates for downloader-first GitHub, dual coding agents, logo/design system, maintainable comments, public trust and feedback were added. **No GitHub settings, application source implementation, live logo design approval, release binaries, runtime security checks or installer smoke tests were performed by this documentation update.**
 
-## M0 local evidence — 2026-10-15 (Claude Code, branch `m0-bootstrap`, macOS 26.1 arm64)
+## M0 local evidence — 2026-10-15 (macOS 26.1 arm64)
 
 Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `rust-toolchain.toml`), Xcode at `/Applications/Xcode.app`, Tauri 2.12.4, create-tauri-app 4.8.0.
 

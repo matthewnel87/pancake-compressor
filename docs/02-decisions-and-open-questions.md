@@ -34,7 +34,7 @@ Decisions marked **provisional** require M0/M1 evidence; do not treat guesses as
 
 For every new decision: create `ADR-NNN` entry with date, options considered, security/licensing consequence, tests, and reason. Do not silently change output semantics, permissions or supported OSes.
 
-## ADRs added during M0 (2026-10-15, Claude Code, branch `m0-bootstrap`)
+## ADRs added during implementation (from 2026-10-15)
 
 | ID | Decision | Options considered | Consequence / reason | Status |
 |---|---|---|---|---|
