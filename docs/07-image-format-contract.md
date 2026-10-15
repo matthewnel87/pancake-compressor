@@ -86,3 +86,7 @@ What the engine actually does today, checked by `crates/pancake-core/tests/forma
 | AVIF | **Not storable:** refused unless loss allowed | Kept (Exif item) | **Not storable:** reported as dropped |
 
 Anything not kept is reported (`metadata_dropped` / `colour_profile_dropped`), never silent. EXIF that cannot be parsed safely is not copied (it could re-rotate the upright image) and is reported as dropped. **Not read yet:** EXIF/XMP inside AVIF inputs, and PNG metadata chunks placed after the image data.
+
+## Smart Auto v0.1 as implemented (ADR-035)
+
+`crates/pancake-core/src/auto.rs`. Rule-based, deterministic, bounded candidates; the smallest valid output wins; the original is kept when nothing is smaller. Transparent images never get JPEG in Auto. AVIF is opt-in for Auto because of encode time. Every result carries a stable reason code (`requested`, `smallest-candidate`, `original-already-smaller`, `no-suitable-mode`) for the results list. Not yet: resize ("Website" preset), perceptual quality checks.

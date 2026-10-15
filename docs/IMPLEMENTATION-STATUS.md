@@ -142,3 +142,15 @@ Peak memory for the whole run: **1.01 GB** (`/usr/bin/time -l`). For M2 this mea
 | **Bug fixed** | PNG palette ignored EXIF orientation | Sideways camera images would have stayed sideways with orientation lost. Now rotated and reported like the other encoders |
 | Not done | | EXIF/XMP in AVIF **inputs** not read; PNG metadata after IDAT not read; extended XMP for JPEG; IPTC not carried; privacy-first strip option (M2/M3) |
 | Checks on macOS arm64 | Passed | 70 unit + matrix + 3 metadata + 2 API tests + 4 doctests; clippy clean; `cargo deny check` clean |
+
+## M1 step 6: presets and Smart Auto (PNK-014) — 2026-10-15 (same branch)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Presets (Balanced, Smaller, Best quality, Lossless) | Implemented, tested | `auto::tests` |
+| Smart Auto | Implemented, tested | Photo → WebP/JPEG, deterministic across runs; transparent graphic → PNG/WebP with alpha kept, never JPEG |
+| Never larger (ADR-015) | Tested | Quality-20 JPEG re-encoded at Best quality keeps the original (`original-already-smaller`) |
+| Lossless preset | Tested | PNG photo → pixel-identical; JPEG keep → original kept (`no-suitable-mode`) |
+| AVIF consent | Tested | Profile loss needs consent; AVIF in Auto only when enabled |
+| Preset numbers | **Provisional** | Not tuned on real photographs yet |
+| Checks on macOS arm64 | Passed | 78 unit + matrix + 3 metadata + 2 API tests + 4 doctests; clippy clean |
