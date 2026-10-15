@@ -8,7 +8,9 @@ A free, open-source desktop app for Windows and macOS that compresses and conver
 
 ## Download
 
-Get the latest version from **[Releases](../../releases)**. Pick the file for your computer:
+[![Download for Windows](https://img.shields.io/badge/Download-Windows-0078D6?style=for-the-badge&logo=windows11&logoColor=white)](../../releases) [![Download for macOS](https://img.shields.io/badge/Download-macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](../../releases)
+
+Both buttons go to the same **[Releases](../../releases)** page. Pick the file for your computer:
 
 | Your computer | Download |
 |---|---|

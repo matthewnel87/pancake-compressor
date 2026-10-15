@@ -103,6 +103,11 @@ jobs:
         run: python scripts/make_checksums.py --directory release-artifacts --expected 3
       - name: Add licence and third-party notices to the release
         run: cp LICENSE NOTICES.md release-artifacts/
+      - name: Add version-independent alias filenames (ADR-044, stable download links)
+        run: |
+          cp release-artifacts/*_windows_x64-setup.exe release-artifacts/Pancake-Compressor-windows-x64-setup.exe
+          cp release-artifacts/*_macos_arm64.dmg release-artifacts/Pancake-Compressor-macos-arm64.dmg
+          cp release-artifacts/*_macos_x64.dmg release-artifacts/Pancake-Compressor-macos-x64.dmg
       - name: Publish **draft prerelease only**
         uses: softprops/action-gh-release@v3
         with:
