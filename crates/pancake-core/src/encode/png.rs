@@ -17,10 +17,9 @@
 
 use std::borrow::Cow;
 
-use image::DynamicImage;
 use oxipng::{Options, StripChunks};
 
-use super::EncodeError;
+use super::{EncodeError, has_transparency};
 use crate::decode::{DecodedImage, decode};
 use crate::format::ImageFormat;
 use crate::limits::ImageLimits;
@@ -235,10 +234,6 @@ fn verify(output: &[u8], source: &DecodedImage, exactness: Exactness) -> Result<
         }
     }
     Ok(())
-}
-
-fn has_transparency(image: &DynamicImage) -> bool {
-    image.color().has_alpha() && image.to_rgba8().pixels().any(|p| p[3] < 255)
 }
 
 fn map_oxipng_error(error: oxipng::PngError) -> EncodeError {

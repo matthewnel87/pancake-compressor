@@ -13,6 +13,7 @@
 | `crates/pancake-core/src/decode/avif.rs` | AVIF decoding via `avif-decode`, with a pre-check that the AV1 stream cannot declare a bigger frame than the container (ADR-027). |
 | `crates/pancake-core/src/encode.rs` | Encoder error type. Every encoder re-decodes and checks its own output before returning it. |
 | `crates/pancake-core/src/encode/png.rs` | Lossless PNG (`oxipng`, pixel-identical) and lossy palette PNG (`imagequant`) (ADR-029). |
+| `crates/pancake-core/src/encode/jpeg.rs` | JPEG via MozJPEG: applies EXIF orientation, flattens transparency onto a matte and reports both in `Adjustments`; carries ICC (ADR-031). |
 | `src-tauri/src/lib.rs` | Builds the Tauri app and registers the only callable commands. |
 | `src-tauri/src/commands.rs` | `get_app_info`, the single M0 IPC command (read-only, no file access). |
 | `src-tauri/capabilities/main.json` | Built-in Tauri APIs the window may use (deliberately minimal). |
@@ -21,7 +22,7 @@
 | `src/App.tsx` | Launch screen. |
 | `src/styles/tokens.css` | Colour and spacing tokens, with the measured contrast record. |
 
-No file selection or batch code exists yet. Header inspection, decoding for all four formats and PNG encoding are done; JPEG, WebP and AVIF encoders follow.
+No file selection or batch code exists yet. Header inspection, decoding for all four formats and PNG and JPEG encoding are done; WebP and AVIF encoders follow.
 
 ```text
 React / TypeScript interface

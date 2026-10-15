@@ -19,9 +19,12 @@ rust-version = "1.99"
 codegen-units = 1
 lto = true
 opt-level = 3
-# Abort keeps the binary small. Untrusted input must never reach a panic:
-# core code returns errors instead (see AGENTS.md rule 4).
-panic = "abort"
+# Unwind, not abort (ADR-030). Our own code never panics on input
+# (AGENTS.md rule 4, enforced by lints in pancake-core), but MozJPEG reports
+# libjpeg errors by unwinding a panic and requires `catch_unwind`, and the
+# batch engine will catch a panic from any codec as one failed file instead
+# of losing the whole batch.
+panic = "unwind"
 strip = true
 
 # avif-parse 2.1.0 uses `debug_assert!` on a condition that hostile files can

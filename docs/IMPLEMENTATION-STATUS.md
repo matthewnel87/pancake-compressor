@@ -84,7 +84,7 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | Windows x64 / macOS Intel build (needs NASM) | **Not yet proven** | This PR's CI is the first run with NASM installed |
 | Checks on macOS arm64 | Passed | `cargo test` (36 engine tests + 3 doctests) in debug and `--release`; clippy clean; `cargo deny check` clean |
 
-## M1 step 4: PNG encoding — 2026-10-15 (branch `m1-png-encode`, stacked on `m1-avif-decode`; local only, not pushed yet)
+## M1 step 4: PNG and JPEG encoding — 2026-10-15 (branch `m1-png-encode`, stacked on `m1-avif-decode`)
 
 | Area | Status | Evidence |
 |---|---|---|
@@ -95,3 +95,10 @@ Toolchain recorded: Node 24.15.0, npm 11.12.1, Rust 1.99.1 (rustup, pinned in `r
 | C2PA-protected PNG | Mapped to `protected-content`, **not tested** with a real signed file |
 | Size/time benchmarks | **Not measured** | M1 exit criterion; needs representative fixtures |
 | Checks on macOS arm64 | Passed | 44 engine tests + 3 doctests; clippy clean; `cargo deny check` clean |
+| JPEG (MozJPEG) | Implemented, tested | Valid progressive JPEG; quality 40 smaller than 95; out-of-range quality rejected |
+| JPEG transparency | Tested | Transparent area becomes white (default) or black (custom matte); `transparency_flattened` reported |
+| JPEG orientation | Tested | Rotate90 source becomes a 20×40 upright output with no EXIF block; `orientation_applied` reported. **Not yet tested with real camera files** |
+| JPEG ICC profile | Tested | 140 kB profile split across APP2 segments and read back identical; oversize profile refused, not dropped |
+| JPEG greyscale / 16-bit | Tested | Grey stays 1-channel; 16-bit reports `precision_reduced` |
+| Release panic strategy | Changed to unwind (ADR-030) | Required for MozJPEG error handling |
+| Checks on macOS arm64 | Passed | 54 engine tests + 3 doctests; clippy clean; `cargo deny check` clean (IJG allowed) |
