@@ -129,3 +129,21 @@ export function cancelBatch(batchId: string): Promise<void> {
 export function getBatchSnapshot(batchId: string): Promise<BatchSnapshot> {
   return invoke<BatchSnapshot>("get_batch_snapshot", { batchId });
 }
+
+/**
+ * Subscribes to a Rust event. Resolves to an unsubscribe function, or to a
+ * no-op outside the desktop app (tests, `npm run dev` in a browser), where
+ * the Tauri event bridge does not exist.
+ */
+export async function subscribe<T>(name: string, handler: (payload: T) => void): Promise<() => void> {
+  try {
+    const { listen } = await import("@tauri-apps/api/event");
+    return await listen<T>(name, (event) => handler(event.payload));
+  } catch {
+    return () => {};
+  }
+}
+
+export function openOutputFolder(batchId: string): Promise<void> {
+  return invoke<void>("open_output_folder", { batchId });
+}

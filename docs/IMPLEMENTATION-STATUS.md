@@ -175,3 +175,15 @@ Peak memory for the whole run: **1.01 GB** (`/usr/bin/time -l`). For M2 this mea
 | Batch start/cancel/snapshot commands | Implemented, **not yet run end-to-end in the app** | Needs the M3 UI to drive them; engine itself covered by core tests |
 | TS contract + progress reducer | Implemented, tested | `npm run test`: 7 tests incl. late/duplicate/foreign events ignored and final states never undone |
 | Webview permissions | Unchanged | No dialog/fs permission granted to the webview |
+
+## M3 step 1: main window — 2026-10-15 (branch `m3-ui`, stacked on `m2-batch-engine`; local)
+
+| Area | Status | Evidence |
+|---|---|---|
+| Choose images / Choose folder / output folder (Rust-side dialogs) | Implemented | Wired to M2 commands; **dialogs not exercised by automated tests** |
+| Native drag-and-drop | Implemented in Rust (ADR-040) | **Not yet tried by a person** |
+| Format/quality controls, Start, progress, Cancel, summary, Open output folder | Implemented, component-tested | `npm run test`: 9 tests incl. full flow selection → progress → honest summary → open folder; foreign events ignored; plain-language command errors; empty drop explained |
+| Windowed list for large batches | Implemented | **1,000-item performance not measured yet** |
+| Reduced motion, theme override | Implemented (CSS) | Not yet visually checked at 200% zoom |
+| Real end-to-end run in the desktop app | **Not done** | Needs a person (or Accessibility/Screen Recording permission) to click through; see M3 gate |
+| Logo | Placeholder unchanged | Three concepts still to be produced for maintainer choice |

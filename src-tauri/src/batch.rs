@@ -23,7 +23,7 @@ use pancake_core::batch::{
 use pancake_core::output::ConflictPolicy;
 use pancake_core::scan::{OUTPUT_FOLDER_NAME, ScanResult, scan};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 /// Name of the event carrying [`BatchEventDto`] payloads.
@@ -46,6 +46,8 @@ struct Selection {
 struct Running {
     cancel: CancelToken,
     snapshot: Arc<Mutex<SnapshotDto>>,
+    /// Kept in Rust so "open output folder" never takes a path from the UI.
+    output_root: PathBuf,
 }
 
 impl AppState {
@@ -423,6 +425,7 @@ pub fn start_batch(
             Running {
                 cancel: cancel.clone(),
                 snapshot: Arc::clone(&snapshot),
+                output_root: output_root.clone(),
             },
         );
 
@@ -461,6 +464,52 @@ pub fn cancel_batch(state: State<'_, AppState>, batch_id: String) -> Result<(), 
     let running = batches.get(&batch_id).ok_or("unknown-batch")?;
     running.cancel.cancel();
     Ok(())
+}
+
+/// Shows a batch's output folder in Finder / Explorer. The folder comes
+/// from Rust's own record of the batch, never from the UI (ADR-040).
+#[tauri::command]
+pub fn open_output_folder(state: State<'_, AppState>, batch_id: String) -> Result<(), String> {
+    let folder = {
+        let batches = state.batches.lock().map_err(|_| "state-unavailable")?;
+        batches
+            .get(&batch_id)
+            .ok_or("unknown-batch")?
+            .output_root
+            .clone()
+    };
+    if !folder.is_dir() {
+        return Err("output-folder-missing".into());
+    }
+    tauri_plugin_opener::open_path(&folder, None::<&str>)
+        .map_err(|_| "could-not-open-folder".into())
+}
+
+/// Handles files dragged onto the window. Paths arrive from the operating
+/// system's drop event in Rust, not from the web page, so the same trust
+/// rules as the native pickers apply. Scanning runs off the UI thread.
+pub fn handle_drag_drop(app: &AppHandle, event: &tauri::DragDropEvent) {
+    match event {
+        tauri::DragDropEvent::Enter { .. } => {
+            let _ = app.emit("drag-hover", true);
+        }
+        tauri::DragDropEvent::Leave => {
+            let _ = app.emit("drag-hover", false);
+        }
+        tauri::DragDropEvent::Drop { paths, .. } => {
+            let _ = app.emit("drag-hover", false);
+            let app = app.clone();
+            let paths = paths.clone();
+            let _ = std::thread::Builder::new()
+                .name("pancake-drop-scan".into())
+                .spawn(move || {
+                    let state = app.state::<AppState>();
+                    let selection = register_selection(&state, paths);
+                    let _ = app.emit("inputs-dropped", selection);
+                });
+        }
+        _ => {}
+    }
 }
 
 /// Returns the latest known state of a batch.

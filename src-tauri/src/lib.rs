@@ -12,6 +12,8 @@
 pub mod batch;
 pub mod commands;
 
+use tauri::Manager;
+
 /// Builds and runs the Tauri application.
 ///
 /// Only the commands listed in `generate_handler!` are callable from the
@@ -30,7 +32,13 @@ pub fn run() {
             batch::start_batch,
             batch::cancel_batch,
             batch::get_batch_snapshot,
+            batch::open_output_folder,
         ])
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::DragDrop(drop) = event {
+                batch::handle_drag_drop(window.app_handle(), drop);
+            }
+        })
         .run(tauri::generate_context!());
 
     if let Err(error) = result {

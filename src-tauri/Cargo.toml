@@ -21,12 +21,15 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-# No HTTP, shell, fs, opener or updater plugins: see AGENTS.md rules 2 and 5
-# and ADR-014. Adding any plugin needs a security review and a dated ADR.
+# No HTTP, shell, fs or updater plugins: see AGENTS.md rules 2 and 5 and
+# ADR-014. `tauri-plugin-dialog` and `tauri-plugin-opener` are used from Rust
+# only (ADR-039, ADR-040); the webview has no permission for either. Adding
+# any plugin needs a security review and a dated ADR.
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 pancake-core = { path = "../crates/pancake-core" }
 tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
 
 [dev-dependencies]
 image = { version = "0.25.10", default-features = false, features = ["png"] }

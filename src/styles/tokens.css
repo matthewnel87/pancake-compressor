@@ -32,9 +32,9 @@
   --radius-dropzone: 20px;
 }
 
-/* Follow the operating system theme. A saved user override arrives in M3. */
+/* Dark theme: follows the OS unless the user picked light; or forced dark. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --color-surface: #1d1917;
     --color-surface-raised: #282220;
     --color-ink: #faf4e8;
@@ -46,6 +46,25 @@
     --color-error: #ff978f;
     --color-line: #3d3430;
   }
+}
+
+
+:root[data-theme="dark"] {
+  --color-surface: #1d1917;
+  --color-surface-raised: #282220;
+  --color-ink: #faf4e8;
+  --color-ink-muted: #c7bbb0;
+  --color-accent: #f1b369;
+  --color-on-accent: #1d1917;
+  --color-butter: #d3a44b;
+  --color-success: #70d0a4;
+  --color-error: #ff978f;
+  --color-line: #3d3430;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 @layer base {
@@ -60,5 +79,59 @@
   :focus-visible {
     outline: 3px solid var(--color-accent);
     outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Buttons: at least 44px tall (docs/22 touch targets), text labels. */
+  .btn-primary,
+  .btn-secondary {
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: var(--radius-control);
+    font-weight: 600;
+  }
+  .btn-primary {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-ink);
+    border: 1px solid var(--color-line);
+  }
+  .btn-primary:disabled,
+  .btn-secondary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .control {
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-line);
+    background: var(--color-surface-raised);
+    color: var(--color-ink);
+  }
+
+  /* Decorative squash while a batch runs (docs/23). Transform only, so no
+     layout work; removed entirely for reduced-motion users. */
+  .pancake-squash {
+    transform-origin: 50% 75%;
+    animation: pancake-squash 1.2s ease-in-out infinite;
+  }
+  @keyframes pancake-squash {
+    0%,
+    100% {
+      transform: scaleY(1);
+    }
+    50% {
+      transform: scaleY(0.82) scaleX(1.05);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pancake-squash {
+      animation: none;
+    }
   }
 }
